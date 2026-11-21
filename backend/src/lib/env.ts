@@ -19,6 +19,8 @@ export const env = {
   GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET ?? "",
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ?? "",
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ?? "",
+  GOOGLE_API_KEY: process.env.GOOGLE_API_KEY ?? "",
+  GEMINI_MODEL: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
 };
 
 export const isProduction = env.NODE_ENV === "production";

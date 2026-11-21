@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api";
 import { useSession } from "../lib/auth-client";
+import { canEditStation } from "../lib/permissions";
 import { CONNECTOR_LABELS, type Station } from "../types/station";
 import { chargeMinutes, formatDate, formatPower, formatPrice } from "../lib/format";
 import { PowerMeter } from "../components/StationCard";
@@ -10,6 +11,7 @@ import { Spinner } from "../components/Spinner";
 export function StationDetailPage() {
   const { id } = useParams();
   const { data: session } = useSession();
+  const navigate = useNavigate();
   const [station, setStation] = useState<Station | null>(null);
   const [error, setError] = useState<{ status: number; message: string } | null>(null);
 
@@ -36,7 +38,17 @@ export function StationDetailPage() {
 
   if (!station) return <Spinner />;
 
-  const isAdmin = session?.user.role === "admin";
+  const canEdit = canEditStation(session?.user, station);
+
+  async function handleDelete() {
+    if (!station || !window.confirm(`¿Eliminar "${station.name}"?`)) return;
+    try {
+      await api(`/stations/${station.id}`, { method: "DELETE" });
+      navigate(session?.user.role === "admin" ? "/admin" : "/my-stations");
+    } catch (e) {
+      window.alert((e as Error).message);
+    }
+  }
   const fullCost = station.pricePerKwh * 42; // 10→80 % de 60 kWh
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     `${station.address}, ${station.city}, Argentina`,
@@ -59,10 +71,15 @@ export function StationDetailPage() {
             </a>
           </p>
         </div>
-        {isAdmin && (
-          <Link to={`/admin/stations/${station.id}/edit`} className="btn btn-primary">
-            Editar
-          </Link>
+        {canEdit && (
+          <div className="admin-actions">
+            <Link to={`/stations/${station.id}/edit`} className="btn btn-primary">
+              Editar
+            </Link>
+            <button className="btn btn-danger" onClick={handleDelete}>
+              Eliminar
+            </button>
+          </div>
         )}
       </div>
 
@@ -110,6 +127,13 @@ export function StationDetailPage() {
         <div>
           <dt>Instalada</dt>
           <dd>{formatDate(station.installedAt)}</dd>
+        </div>
+        <div>
+          <dt>Cargada por</dt>
+          <dd>
+            {station.createdByName || "—"}
+            {session?.user.id === station.createdBy && <span className="tag"> vos</span>}
+          </dd>
         </div>
         <div>
           <dt>Última actualización</dt>

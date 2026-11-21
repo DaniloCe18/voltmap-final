@@ -4,6 +4,8 @@
 
 Cualquier usuario registrado puede **aportar estaciones** a la red. Cada estación queda a su nombre y solo esa persona puede editarla o eliminarla. Los administradores moderan **todo** el catálogo y gestionan los usuarios.
 
+Además incluye **Volti**, un **agente de IA hecho con LangChain** (ver [más abajo](#-agente-de-ia-volti-langchain--gemini)). Le preguntás en lenguaje natural, por ejemplo *"¿dónde cargo rápido en Córdoba con CCS2?"*, y el agente decide solo qué herramientas usar para consultar la base y responderte.
+
 > Por qué este tema: la movilidad eléctrica crece rápido, pero la info sobre dónde cargar está dispersa. La "ansiedad de autonomía" es una de las principales barreras para pasarse a un auto eléctrico, y VoltMap ataca justamente ese problema.
 
 ## 🔗 Links
@@ -36,6 +38,7 @@ Todo usuario nuevo (por email, GitHub o Google) se registra con rol **`user`**. 
 | Editar / eliminar estaciones **de otros** | ❌ | ❌ (403) | ✅ |
 | Panel admin `/admin` (ABM de todas) | ❌ | ❌ ("Sin permisos") | ✅ |
 | Crear usuarios y cambiarles el rol | ❌ | ❌ | ✅ |
+| Chatear con el asistente de IA | ❌ | ✅ | ✅ |
 
 El **listado general es público** y muestra las estaciones de todos. Cada usuario tiene además su vista **"Mis estaciones"** (`/my-stations`), donde administra solo las suyas.
 
@@ -79,6 +82,7 @@ Base: `/api`
 | PUT | `/api/stations/:id` | Reemplazar estación (todos los campos) | **dueño** o admin |
 | PATCH | `/api/stations/:id` | Actualizar campos sueltos | **dueño** o admin |
 | DELETE | `/api/stations/:id` | Eliminar estación | **dueño** o admin |
+| POST | `/api/agent/chat` | Conversar con el agente de IA (máx. 15 mensajes cada 5 min) | user / admin (logueado) |
 | * | `/api/auth/*` | Endpoints de Better Auth (sign-up, sign-in, OAuth, sesión, admin) | Según endpoint |
 
 **Query params de `GET /api/stations`:** `page`, `limit` (máx. 50), `search`, `city`, `connectorType`, `minPower`, `available=true|false`, `renewable=true|false`, `sort=newest|oldest|power|price|name`.
@@ -99,6 +103,8 @@ Respuesta:
 | 401 | Ruta de escritura sin sesión |
 | 403 | Con sesión, pero intenta modificar una estación de otro usuario sin ser admin |
 | 404 | La estación no existe (o el id es inválido) |
+| 429 | Se superó el límite de mensajes al agente |
+| 502 / 503 | El modelo de IA no respondió / falta configurar `GOOGLE_API_KEY` |
 
 Protección de las rutas de escritura ([`backend/src/routes/station.routes.ts`](backend/src/routes/station.routes.ts)):
 - **Crear:** `authMiddleware` + `requireRole("user", "admin")`
@@ -146,6 +152,8 @@ Vite proxea `/api` → `http://localhost:3000`, así que el navegador trabaja co
 | `FRONTEND_URL` | `http://localhost:5173` | Para CORS y `trustedOrigins` |
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | | OAuth App de GitHub |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | | OAuth Client de Google |
+| `GOOGLE_API_KEY` | | API key de Gemini para el agente ([Google AI Studio](https://aistudio.google.com/apikey), gratis) |
+| `GEMINI_MODEL` | `gemini-2.5-flash` | Modelo que usa el agente |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | `admin@voltmap.dev` / `Admin1234!` | Usuario admin del seed |
 | `SEED_USER_EMAIL` / `SEED_USER_PASSWORD` | `user@voltmap.dev` / `User1234!` | Usuario común del seed |
 
@@ -202,6 +210,34 @@ Desde tu máquina, con `MONGODB_URI` apuntando a la base de producción: `cd bac
 
 ---
 
+## 🤖 Agente de IA: Volti (LangChain + Gemini)
+
+Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat`, que arma un agente con **LangChain** (`createAgent`), usa como modelo **Google Gemini** y le da 4 herramientas ([`backend/src/agent/tools.ts`](backend/src/agent/tools.ts)):
+
+| Herramienta | Qué hace |
+|---|---|
+| `buscar_estaciones` | Consulta Mongo con filtros (ciudad, conector, potencia, disponibles, renovables, 24 h, orden) |
+| `detalle_estacion` | Trae todos los datos de una estación por id |
+| `estadisticas_red` | Agregación en Mongo: totales, disponibles, renovables, precio promedio, ciudades |
+| `estimar_carga` | Calcula el tiempo y el costo de una carga (cuentas exactas, sin que el modelo las "adivine") |
+
+**Cómo funciona:** el modelo recibe la pregunta y **decide por su cuenta** qué herramientas llamar y con qué argumentos. Ve los resultados y, si hace falta, llama a otras (por ejemplo, busca, no encuentra nada, afloja un filtro y vuelve a buscar). Recién ahí arma la respuesta, con links a las estaciones. En el chat se puede desplegar la **traza de herramientas** que usó el agente en cada respuesta.
+
+**Seguridad y costos:** requiere sesión, valida el body con Zod (máx. 20 mensajes de hasta 1000 caracteres), aplica un rate limit por usuario (15 mensajes cada 5 min) y limita los pasos del agente (`recursionLimit`). El system prompt le prohíbe inventar datos: todo sale de la base.
+
+### Relación con los contenidos de la materia
+
+**Clase 13: agentes de software.** Volti cumple las características de agente vistas en clase:
+- **Actúa en nombre del usuario:** recibe un objetivo ("quiero cargar en el camino a Mar del Plata") y lo resuelve.
+- **Autonomía:** nadie le programa el orden de los pasos. El modelo elige qué herramienta usar y cuándo.
+- **Reactividad:** responde a lo que "percibe" del entorno (los resultados de las herramientas) y ajusta su plan. Si una búsqueda viene vacía, cambia los filtros.
+- **Proactividad:** sugiere alternativas o cómo afinar la búsqueda sin que se lo pidan.
+- **Tipo:** es un **agente de información** (recopila y filtra información de una fuente de datos) con rasgos de **agente de interfaz**, porque asiste al usuario dentro de la aplicación. Por eso también puede verse como un **agente híbrido**.
+
+**Clase 14: programación paralela y concurrencia.**
+- Cuando el modelo pide **varias herramientas en el mismo paso** (por ejemplo, buscar en dos ciudades), LangChain las ejecuta **a la vez** y no una tras otra. En el listado del backend pasa lo mismo: `find()` y `countDocuments()` se lanzan juntas con `Promise.all`.
+- Aclaración, siguiendo la distinción de la clase entre **concurrente y paralelo**: Node.js ejecuta JavaScript en **un solo hilo**, así que esto es **concurrencia** (mientras una consulta espera a Mongo o a Gemini, el event loop atiende la otra) y no paralelismo real de CPU con varios núcleos, como el multithreading de C/C++. Para cómputo pesado en paralelo, Node ofrece `worker_threads`. Acá no hace falta, porque el cuello de botella es la entrada/salida (red y base de datos), no la CPU.
+
 ## ✅ Funcionalidades
 
 **Obligatorias**
@@ -220,6 +256,7 @@ Desde tu máquina, con `MONGODB_URI` apuntando a la base de producción: `cd bac
 - ✅ Gestión de usuarios para el admin (`/admin/users`): crearlos (`authClient.admin.createUser`) y cambiarles el rol (`authClient.admin.setRole`)
 
 **Extras**
+- 🤖 Agente de IA con LangChain (Volti), con herramientas sobre la base, traza visible de herramientas y rate limit
 - Estimación de tiempo y costo de carga, indicador de "carga rápida" y medidor visual de potencia
 - Link directo a Google Maps desde el detalle
 
@@ -231,11 +268,12 @@ Desde tu máquina, con `MONGODB_URI` apuntando a la base de producción: `cd bac
 .
 ├── backend/
 │   ├── src/
+│   │   ├── agent/          # agente LangChain: tools, agente y controlador del chat
 │   │   ├── controllers/station.controller.ts
 │   │   ├── lib/            # auth (Better Auth), db, env
 │   │   ├── middlewares/    # authMiddleware, requireRole, validateBody, errores
 │   │   ├── models/station.model.ts
-│   │   ├── routes/station.routes.ts
+│   │   ├── routes/         # station.routes.ts, agent.routes.ts
 │   │   ├── schemas/station.schema.ts   # Zod
 │   │   ├── scripts/seed.ts
 │   │   ├── app.ts
@@ -246,13 +284,13 @@ Desde tu máquina, con `MONGODB_URI` apuntando a la base de producción: `cd bac
 │   └── src/
 │       ├── components/     # Navbar, RequireAdmin, StationForm, StationCard…
 │       ├── lib/            # auth-client, api, format
-│       ├── pages/          # Home, Detail, MyStations, Editor, Login, Register, admin/*
+│       ├── pages/          # Home, Detail, MyStations, Editor, Assistant, Login, Register, admin/*
 │       └── schemas/        # Zod de formularios
 ├── render.yaml
 └── README.md
 ```
 
 ## 🛠️ Stack
-**Backend:** Express 5 · TypeScript · MongoDB (Mongoose + driver nativo) · Better Auth (plugin admin) · Zod
+**Backend:** Express 5 · TypeScript · MongoDB (Mongoose + driver nativo) · Better Auth (plugin admin) · Zod · LangChain + Google Gemini
 **Frontend:** React 19 · Vite · TypeScript · React Router 7 · React Hook Form · Zod · Better Auth client
 **Deploy:** Render (Web Service + Static Site)

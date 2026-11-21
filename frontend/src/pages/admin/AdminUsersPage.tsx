@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { authClient, useSession } from "../../lib/auth-client";
 import { formatDate } from "../../lib/format";
 import { Spinner } from "../../components/Spinner";
+import { CreateUserForm } from "../../components/CreateUserForm";
 
 type Role = "user" | "admin";
 
@@ -15,7 +16,7 @@ interface AdminUser {
   createdAt: Date | string;
 }
 
-/** Opcional: cambiar roles con authClient.admin.setRole */
+/** Gestión de usuarios: alta (admin.createUser) y cambio de rol (admin.setRole) */
 export function AdminUsersPage() {
   const { data: session } = useSession();
   const [users, setUsers] = useState<AdminUser[] | null>(null);
@@ -57,6 +58,8 @@ export function AdminUsersPage() {
           <h1>Usuarios y roles</h1>
         </div>
       </div>
+
+      <CreateUserForm onCreated={load} />
 
       {error && <div className="alert alert-error">{error}</div>}
 

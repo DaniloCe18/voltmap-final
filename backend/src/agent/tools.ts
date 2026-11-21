@@ -47,7 +47,7 @@ export const searchStationsTool = tool(
     const sort: Record<string, 1 | -1> =
       sortBy === "precio" ? { pricePerKwh: 1 } : sortBy === "potencia" ? { powerKw: -1 } : { name: 1 };
 
-    const stations = await StationModel.find(filter).sort(sort).limit(limit).lean<StationLean[]>();
+    const stations = await StationModel.find(filter).sort(sort).limit(Math.min(Math.max(Math.round(limit ?? 8), 1), 15)).lean<StationLean[]>();
     return JSON.stringify({ cantidad: stations.length, estaciones: stations.map(summarize) });
   },
   {
@@ -58,13 +58,13 @@ export const searchStationsTool = tool(
     schema: z.object({
       city: z.string().optional().describe("Ciudad (coincidencia parcial, ej: 'Córdoba')"),
       connectorType: z.enum(CONNECTOR_TYPES).optional().describe("Tipo de conector"),
-      minPowerKw: z.number().optional().describe("Potencia mínima en kW (50+ = carga rápida)"),
+      minPowerKw: z.number().optional().describe("Potencia mínima en kW (50 o más = carga rápida)"),
       onlyAvailable: z.boolean().optional().describe("Solo estaciones operativas"),
       onlyRenewable: z.boolean().optional().describe("Solo con energía 100% renovable"),
       open24h: z.boolean().optional().describe("Solo abiertas las 24 h"),
       text: z.string().optional().describe("Texto libre: nombre, operador o dirección"),
       sortBy: z.enum(["precio", "potencia", "nombre"]).optional().describe("Orden de los resultados"),
-      limit: z.number().int().min(1).max(15).default(8),
+      limit: z.number().optional().describe("Máximo de resultados, entre 1 y 15 (por defecto 8)"),
     }),
   },
 );
@@ -120,8 +120,12 @@ export const networkStatsTool = tool(
 
 export const estimateChargeTool = tool(
   async ({ batteryKwh, fromPercent, toPercent, powerKw, pricePerKwh }) => {
-    if (toPercent <= fromPercent) {
-      return JSON.stringify({ error: "El porcentaje final debe ser mayor al inicial" });
+    // Validaciones acá (Gemini no acepta mínimos/máximos en el esquema de la herramienta)
+    if (batteryKwh <= 0 || powerKw <= 0) {
+      return JSON.stringify({ error: "La batería y la potencia tienen que ser mayores a cero" });
+    }
+    if (fromPercent < 0 || toPercent > 100 || toPercent <= fromPercent) {
+      return JSON.stringify({ error: "Porcentajes inválidos: usá valores de 0 a 100 y el final mayor al inicial" });
     }
     const energyKwh = (batteryKwh * (toPercent - fromPercent)) / 100;
     // ~90 % de eficiencia; arriba del 80 % la carga se hace más lenta (curva de carga)
@@ -138,11 +142,11 @@ export const estimateChargeTool = tool(
     description:
       "Calcula el tiempo y el costo aproximados de una carga. Usala en vez de hacer las cuentas de memoria.",
     schema: z.object({
-      batteryKwh: z.number().positive().describe("Capacidad de la batería en kWh (si no la sabés, usá 60)"),
-      fromPercent: z.number().min(0).max(100),
-      toPercent: z.number().min(0).max(100),
-      powerKw: z.number().positive().describe("Potencia del cargador en kW"),
-      pricePerKwh: z.number().min(0).optional().describe("Precio por kWh en ARS"),
+      batteryKwh: z.number().describe("Capacidad de la batería en kWh (si no la sabés, usá 60)"),
+      fromPercent: z.number().describe("Porcentaje inicial de batería (0 a 100)"),
+      toPercent: z.number().describe("Porcentaje final de batería (0 a 100)"),
+      powerKw: z.number().describe("Potencia del cargador en kW"),
+      pricePerKwh: z.number().optional().describe("Precio por kWh en ARS"),
     }),
   },
 );

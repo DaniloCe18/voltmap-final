@@ -42,11 +42,29 @@ export async function chat(req: Request, res: Response): Promise<void> {
 
   const { messages } = req.body as ChatBody;
   const started = Date.now();
+  const elapsed = () => `${((Date.now() - started) / 1000).toFixed(1)} s`;
+  console.log(`🤖 Agente: nueva pregunta → "${messages[messages.length - 1].content.slice(0, 80)}"`);
 
   try {
     const result = await getAgent().invoke(
       { messages: messages.map((m) => ({ role: m.role, content: m.content })) },
-      { recursionLimit: 12 },
+      {
+        recursionLimit: 12,
+        // Nunca esperar más de 60 s: si Gemini no responde, se corta y se avisa
+        signal: AbortSignal.timeout(60_000),
+        // Traza en la terminal de cada paso del agente (útil para depurar)
+        callbacks: [
+          {
+            handleChatModelStart: () => console.log(`   🧠 [${elapsed()}] consultando a Gemini...`),
+            handleLLMEnd: () => console.log(`   ✅ [${elapsed()}] Gemini respondió`),
+            handleLLMError: (e: unknown) =>
+              console.log(`   ❌ [${elapsed()}] error de Gemini: ${e instanceof Error ? e.message : String(e)}`),
+            handleToolStart: (_tool: unknown, input: string) =>
+              console.log(`   🔧 [${elapsed()}] herramienta con: ${String(input).slice(0, 120)}`),
+            handleToolEnd: () => console.log(`   📦 [${elapsed()}] herramienta terminó`),
+          },
+        ],
+      },
     );
 
     // Mensajes nuevos de este turno (lo que el agente "pensó" y "hizo")
@@ -61,8 +79,15 @@ export async function chat(req: Request, res: Response): Promise<void> {
     const last = result.messages[result.messages.length - 1];
     const reply = messageText(last?.content).trim() || "No pude generar una respuesta, probá reformular la pregunta.";
 
+    console.log(`🤖 Agente: respuesta lista en ${elapsed()} (${toolCalls.length} herramientas)`);
     res.json({ reply, toolCalls, elapsedMs: Date.now() - started });
   } catch (err) {
+    const name = err instanceof Error ? err.name : "";
+    if (name === "TimeoutError" || name === "AbortError") {
+      console.error(`⏱️  Agente: se cortó después de ${elapsed()} sin respuesta de Gemini`);
+      res.status(504).json({ error: "El asistente tardó demasiado en responder. Probá de nuevo." });
+      return;
+    }
     console.error("Error del agente:", err);
     res.status(502).json({ error: "El modelo de IA no respondió. Probá de nuevo en unos segundos." });
   }

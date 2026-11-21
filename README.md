@@ -153,7 +153,7 @@ Vite proxea `/api` → `http://localhost:3000`, así que el navegador trabaja co
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | | OAuth App de GitHub |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | | OAuth Client de Google |
 | `GOOGLE_API_KEY` | | API key de Gemini para el agente ([Google AI Studio](https://aistudio.google.com/apikey), gratis) |
-| `GEMINI_MODEL` | `gemini-2.5-flash` | Modelo que usa el agente |
+| `GEMINI_MODEL` | `gemini-3.5-flash-lite` | Modelo que usa el agente |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | `admin@voltmap.dev` / `Admin1234!` | Usuario admin del seed |
 | `SEED_USER_EMAIL` / `SEED_USER_PASSWORD` | `user@voltmap.dev` / `User1234!` | Usuario común del seed |
 

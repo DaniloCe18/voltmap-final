@@ -1,0 +1,19 @@
+# Dependencias
+node_modules/
+
+# Builds
+dist/
+build/
+
+# Variables de entorno (NUNCA commitear secretos)
+.env
+.env.*
+!.env.example
+
+# Logs y varios
+*.log
+npm-debug.log*
+.DS_Store
+.vscode/
+.idea/
+coverage/

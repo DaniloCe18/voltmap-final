@@ -4,7 +4,7 @@
 services:
   # ─── Backend: Web Service ───
   - type: web
-    name: voltmap-api
+    name: voltmap-danilo-api
     runtime: node
     rootDir: backend
     plan: free
@@ -19,9 +19,9 @@ services:
       - key: BETTER_AUTH_SECRET
         generateValue: true
       - key: BETTER_AUTH_URL
-        value: https://voltmap.onrender.com
+        value: https://voltmap-danilo.onrender.com
       - key: FRONTEND_URL
-        value: https://voltmap.onrender.com
+        value: https://voltmap-danilo.onrender.com
       - key: GITHUB_CLIENT_ID
         sync: false
       - key: GITHUB_CLIENT_SECRET
@@ -37,7 +37,7 @@ services:
 
   # ─── Frontend: Static Site ───
   - type: web
-    name: voltmap
+    name: voltmap-danilo
     runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
@@ -46,7 +46,7 @@ services:
       # 1) La API se llama por /api: Render la proxea al backend (mismo origen → cookies OK)
       - type: rewrite
         source: /api/*
-        destination: https://voltmap-api.onrender.com/api/*
+        destination: https://voltmap-danilo-api.onrender.com/api/*
       # 2) SPA: F5 en cualquier ruta devuelve index.html
       - type: rewrite
         source: /*

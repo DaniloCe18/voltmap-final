@@ -12,9 +12,9 @@ Además incluye **Volti**, un **agente de IA hecho con LangChain** (ver [más ab
 
 | | URL |
 |---|---|
-| **Frontend** (Static Site) | https://voltmap.onrender.com |
-| **Backend** (Web Service) | https://voltmap-api.onrender.com/api/health |
-| **Repositorio** | https://github.com/<tu-usuario>/voltmap |
+| **Frontend** (Static Site) | https://voltmap-danilo.onrender.com |
+| **Backend** (Web Service) | https://voltmap-danilo-api.onrender.com/api/health |
+| **Repositorio** | https://github.com/DaniloCe18/voltmap |
 
 > ⚠️ El backend está en el plan gratuito de Render: el primer request después de un rato de inactividad puede tardar unos 50 segundos.
 
@@ -163,8 +163,8 @@ En [Google Cloud Console](https://console.cloud.google.com/):
 1. Crear un proyecto → **APIs y servicios → Pantalla de consentimiento de OAuth** → tipo **Externo**. Completar el nombre de la app, el email de soporte y los dominios autorizados (`onrender.com`).
 2. Scopes: solo los básicos (`openid`, `email`, `profile`).
 3. **Credenciales → Crear credenciales → ID de cliente de OAuth → Aplicación web**:
-   - **Orígenes de JavaScript autorizados:** `http://localhost:5173` y `https://voltmap.onrender.com`
-   - **URIs de redireccionamiento autorizados:** `http://localhost:5173/api/auth/callback/google` y `https://voltmap.onrender.com/api/auth/callback/google`
+   - **Orígenes de JavaScript autorizados:** `http://localhost:5173` y `https://voltmap-danilo.onrender.com`
+   - **URIs de redireccionamiento autorizados:** `http://localhost:5173/api/auth/callback/google` y `https://voltmap-danilo.onrender.com/api/auth/callback/google`
 4. **Publicar la app:** en *Pantalla de consentimiento / Público (Audience)*, tocar **"Publicar app"** para que el estado pase de *Prueba* a **En producción**. En modo prueba solo pueden entrar las cuentas agregadas como testers. Publicada, **puede entrar cualquier cuenta de Google**. Con los scopes básicos no hace falta la verificación de Google.
 
 ### OAuth App de GitHub (desarrollo)
@@ -183,7 +183,7 @@ Se puede usar el blueprint [`render.yaml`](render.yaml) (New → Blueprint) o cr
 - **Root Directory:** `backend`
 - **Build Command:** `npm install --include=dev && npm run build`
 - **Start Command:** `npm start`
-- **Variables:** las de la tabla, con `NODE_ENV=production` y `BETTER_AUTH_URL` = `FRONTEND_URL` = `https://voltmap.onrender.com`
+- **Variables:** las de la tabla, con `NODE_ENV=production` y `BETTER_AUTH_URL` = `FRONTEND_URL` = `https://voltmap-danilo.onrender.com`
 
 ### Frontend: Static Site
 - **Root Directory:** `frontend`
@@ -193,15 +193,15 @@ Se puede usar el blueprint [`render.yaml`](render.yaml) (New → Blueprint) o cr
 
 | Source | Destination | Action |
 |---|---|---|
-| `/api/*` | `https://voltmap-api.onrender.com/api/*` | Rewrite |
+| `/api/*` | `https://voltmap-danilo-api.onrender.com/api/*` | Rewrite |
 | `/*` | `/index.html` | Rewrite |
 
 La primera regla hace que el frontend llame siempre a `/api` (mismo origen, así la cookie de sesión funciona sin problemas de third-party cookies). La segunda hace que **F5 funcione en cualquier ruta** de la SPA.
 
 ### OAuth App de GitHub (producción)
 Una segunda OAuth App, separada de la de desarrollo:
-- **Homepage URL:** `https://voltmap.onrender.com`
-- **Authorization callback URL:** `https://voltmap.onrender.com/api/auth/callback/github`
+- **Homepage URL:** `https://voltmap-danilo.onrender.com`
+- **Authorization callback URL:** `https://voltmap-danilo.onrender.com/api/auth/callback/github`
 
 (El callback apunta al **frontend**, porque `/api/*` se reescribe hacia el backend.)
 

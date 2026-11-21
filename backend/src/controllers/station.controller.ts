@@ -17,8 +17,17 @@ function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// GET /api/stations  → listado con paginación, búsqueda y filtros
+// GET /api/stations  → listado general (público) con paginación, búsqueda y filtros
 export async function listStations(req: Request, res: Response): Promise<void> {
+  await sendList(req, res, {});
+}
+
+// GET /api/stations/mine → solo las estaciones del usuario logueado
+export async function listMyStations(req: Request, res: Response): Promise<void> {
+  await sendList(req, res, { createdBy: req.user!.id });
+}
+
+async function sendList(req: Request, res: Response, baseFilter: FilterQuery<Station>) {
   const parsed = listQuerySchema.safeParse(req.query);
   if (!parsed.success) {
     res.status(400).json({
@@ -31,7 +40,7 @@ export async function listStations(req: Request, res: Response): Promise<void> {
   const { page, limit, search, city, connectorType, minPower, available, renewable, sort } =
     parsed.data;
 
-  const filter: FilterQuery<Station> = {};
+  const filter: FilterQuery<Station> = { ...baseFilter };
   if (search) {
     const rx = new RegExp(escapeRegex(search), "i");
     filter.$or = [{ name: rx }, { city: rx }, { operator: rx }, { address: rx }];
@@ -80,14 +89,19 @@ export async function getStation(req: Request, res: Response): Promise<void> {
   res.json(station);
 }
 
-// POST /api/stations  (admin)
+// POST /api/stations  (cualquier usuario logueado: queda a su nombre)
 export async function createStation(req: Request, res: Response): Promise<void> {
-  const station = await StationModel.create({ ...req.body, createdBy: req.user!.id });
+  const station = await StationModel.create({
+    ...req.body,
+    createdBy: req.user!.id,
+    createdByName: req.user!.name,
+  });
   res.status(201).json(station);
 }
 
-// PUT /api/stations/:id  (admin) → reemplazo completo
-// PATCH /api/stations/:id (admin) → actualización parcial
+// PUT /api/stations/:id   → reemplazo completo   (dueño o admin)
+// PATCH /api/stations/:id → actualización parcial (dueño o admin)
+// El dueño (createdBy) nunca se modifica: Zod descarta ese campo.
 export async function updateStation(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
   if (!isValidObjectId(id)) {
@@ -105,7 +119,7 @@ export async function updateStation(req: Request, res: Response): Promise<void> 
   res.json(station);
 }
 
-// DELETE /api/stations/:id  (admin)
+// DELETE /api/stations/:id  (dueño o admin)
 export async function deleteStation(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
   if (!isValidObjectId(id)) {

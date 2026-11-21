@@ -20,7 +20,9 @@ const stationSchema = new Schema(
     open24h: { type: Boolean, default: false },
     available: { type: Boolean, default: true },
     installedAt: { type: Date, required: true },
-    createdBy: { type: String, required: true },
+    // Dueño del registro (id y nombre del usuario que la cargó)
+    createdBy: { type: String, required: true, index: true },
+    createdByName: { type: String, default: "" },
   },
   {
     timestamps: true,

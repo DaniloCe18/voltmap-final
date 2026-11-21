@@ -1,4 +1,4 @@
-import { Outlet, Route, Routes } from "react-router-dom";
+import { Link, Outlet, Route, Routes } from "react-router-dom";
 import { Navbar } from "./components/Navbar";
 import { RequireAdmin } from "./components/RequireAdmin";
 import { RequireAuth } from "./components/RequireAuth";
@@ -7,6 +7,7 @@ import { StationDetailPage } from "./pages/StationDetailPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { PrivacyPage } from "./pages/PrivacyPage";
 import { AdminStationsPage } from "./pages/admin/AdminStationsPage";
 import { StationEditorPage } from "./pages/StationEditorPage";
 import { MyStationsPage } from "./pages/MyStationsPage";
@@ -22,7 +23,8 @@ function Layout() {
       </main>
       <footer className="footer">
         <div className="container small muted">
-          VoltMap · Trabajo práctico full stack · Express + MongoDB + Better Auth + React
+          VoltMap · Trabajo práctico full stack · Express + MongoDB + Better Auth + React ·{" "}
+          <Link to="/privacidad">Privacidad</Link>
         </div>
       </footer>
     </>
@@ -45,6 +47,7 @@ export default function App() {
         </Route>
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
+        <Route path="privacidad" element={<PrivacyPage />} />
 
         <Route path="admin" element={<RequireAdmin />}>
           <Route index element={<AdminStationsPage />} />

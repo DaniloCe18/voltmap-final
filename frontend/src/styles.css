@@ -270,3 +270,7 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
 @keyframes blink { 0%, 80%, 100% { opacity: 0.2; } 40% { opacity: 1; } }
 .chat-error { margin: 0 1.25rem 0.8rem; }
 .chat-input { display: flex; gap: 0.6rem; padding: 0.9rem; border-top: 1px solid var(--border); }
+
+.legal { padding-top: 2rem; }
+.legal h2 { font-size: 1.2rem; margin-top: 1.6rem; }
+.legal li { margin-bottom: 0.4rem; }

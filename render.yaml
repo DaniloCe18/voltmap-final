@@ -38,9 +38,6 @@ services:
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
-    envVars:
-      - key: VITE_ENABLE_GOOGLE
-        value: "false"
     routes:
       # 1) La API se llama por /api: Render la proxea al backend (mismo origen → cookies OK)
       - type: rewrite

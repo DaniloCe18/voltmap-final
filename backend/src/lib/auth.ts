@@ -15,12 +15,18 @@ if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
   };
 }
 
-// Opcional: solo se habilita si están las credenciales
 if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) {
   socialProviders.google = {
     clientId: env.GOOGLE_CLIENT_ID,
     clientSecret: env.GOOGLE_CLIENT_SECRET,
   };
+}
+
+for (const [name, enabled] of [
+  ["GitHub", !!socialProviders.github],
+  ["Google", !!socialProviders.google],
+] as const) {
+  if (!enabled) console.warn(`⚠️  Login con ${name} deshabilitado: faltan sus variables en el .env`);
 }
 
 export const auth = betterAuth({

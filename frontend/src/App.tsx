@@ -1,13 +1,15 @@
 import { Outlet, Route, Routes } from "react-router-dom";
 import { Navbar } from "./components/Navbar";
 import { RequireAdmin } from "./components/RequireAdmin";
+import { RequireAuth } from "./components/RequireAuth";
 import { HomePage } from "./pages/HomePage";
 import { StationDetailPage } from "./pages/StationDetailPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { AdminStationsPage } from "./pages/admin/AdminStationsPage";
-import { StationEditorPage } from "./pages/admin/StationEditorPage";
+import { StationEditorPage } from "./pages/StationEditorPage";
+import { MyStationsPage } from "./pages/MyStationsPage";
 import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 
 function Layout() {
@@ -32,13 +34,18 @@ export default function App() {
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="stations/:id" element={<StationDetailPage />} />
+
+        {/* Cualquier usuario logueado: registros propios */}
+        <Route element={<RequireAuth />}>
+          <Route path="my-stations" element={<MyStationsPage />} />
+          <Route path="stations/new" element={<StationEditorPage />} />
+          <Route path="stations/:id/edit" element={<StationEditorPage />} />
+        </Route>
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
 
         <Route path="admin" element={<RequireAdmin />}>
           <Route index element={<AdminStationsPage />} />
-          <Route path="stations/new" element={<StationEditorPage />} />
-          <Route path="stations/:id/edit" element={<StationEditorPage />} />
           <Route path="users" element={<AdminUsersPage />} />
         </Route>
 

@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { stationFormSchema, type StationFormValues } from "../schemas/station";
 import { CONNECTOR_LABELS, CONNECTOR_TYPES } from "../types/station";
 import { ApiError } from "../lib/api";
@@ -133,7 +133,7 @@ function Field({
   label: string;
   error?: string;
   hint?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <label className={`field ${error ? "has-error" : ""}`}>

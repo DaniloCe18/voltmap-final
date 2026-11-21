@@ -160,12 +160,13 @@ Vite proxea `/api` → `http://localhost:3000`, así que el navegador trabaja co
 ### OAuth de Google
 
 En [Google Cloud Console](https://console.cloud.google.com/):
-1. Crear un proyecto → **APIs y servicios → Pantalla de consentimiento de OAuth** → tipo **Externo**. Completar el nombre de la app, el email de soporte y los dominios autorizados (`onrender.com`).
+1. Crear un proyecto → **APIs y servicios → Pantalla de consentimiento de OAuth** (Google Auth Platform) → tipo **Externo**, con el nombre de la app y el email de soporte.
 2. Scopes: solo los básicos (`openid`, `email`, `profile`).
 3. **Credenciales → Crear credenciales → ID de cliente de OAuth → Aplicación web**:
    - **Orígenes de JavaScript autorizados:** `http://localhost:5173` y `https://voltmap-danilo.onrender.com`
    - **URIs de redireccionamiento autorizados:** `http://localhost:5173/api/auth/callback/google` y `https://voltmap-danilo.onrender.com/api/auth/callback/google`
-4. **Publicar la app:** en *Pantalla de consentimiento / Público (Audience)*, tocar **"Publicar app"** para que el estado pase de *Prueba* a **En producción**. En modo prueba solo pueden entrar las cuentas agregadas como testers. Publicada, **puede entrar cualquier cuenta de Google**. Con los scopes básicos no hace falta la verificación de Google.
+4. **Información de la marca:** página principal `https://voltmap-danilo.onrender.com`, política de privacidad `https://voltmap-danilo.onrender.com/privacidad` (página incluida en la app) y dominio autorizado `voltmap-danilo.onrender.com`. Google los exige para publicar.
+5. **Publicar la app:** en *Pantalla de consentimiento / Público (Audience)*, tocar **"Publicar app"** para que el estado pase de *Prueba* a **En producción**. En modo prueba solo pueden entrar las cuentas agregadas como testers. Publicada, **puede entrar cualquier cuenta de Google**. Con los scopes básicos no hace falta la verificación de Google.
 
 ### OAuth App de GitHub (desarrollo)
 
@@ -259,6 +260,8 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 - 🤖 Agente de IA con LangChain (Volti), con herramientas sobre la base, traza visible de herramientas y rate limit
 - Estimación de tiempo y costo de carga, indicador de "carga rápida" y medidor visual de potencia
 - Link directo a Google Maps desde el detalle
+- Página de política de privacidad (`/privacidad`), requerida para publicar el login con Google
+- Script de diagnóstico del modelo de IA: `npx tsx src/scripts/test-gemini.ts` (lista los modelos disponibles y mide la respuesta)
 
 ---
 
@@ -271,11 +274,11 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 │   │   ├── agent/          # agente LangChain: tools, agente y controlador del chat
 │   │   ├── controllers/station.controller.ts
 │   │   ├── lib/            # auth (Better Auth), db, env
-│   │   ├── middlewares/    # authMiddleware, requireRole, validateBody, errores
+│   │   ├── middlewares/    # authMiddleware, requireRole, ownership (dueño o admin), validateBody, rate-limit, errores
 │   │   ├── models/station.model.ts
 │   │   ├── routes/         # station.routes.ts, agent.routes.ts
 │   │   ├── schemas/station.schema.ts   # Zod
-│   │   ├── scripts/seed.ts
+│   │   ├── scripts/        # seed.ts (datos de prueba), test-gemini.ts (diagnóstico de IA)
 │   │   ├── app.ts
 │   │   └── index.ts
 │   ├── .env.example
@@ -284,7 +287,7 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 │   └── src/
 │       ├── components/     # Navbar, RequireAdmin, StationForm, StationCard…
 │       ├── lib/            # auth-client, api, format
-│       ├── pages/          # Home, Detail, MyStations, Editor, Assistant, Login, Register, admin/*
+│       ├── pages/          # Home, Detail, MyStations, Editor, Assistant, Login, Register, Privacy, admin/*
 │       └── schemas/        # Zod de formularios
 ├── render.yaml
 └── README.md

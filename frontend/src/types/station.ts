@@ -24,6 +24,7 @@ export interface Station {
   fastCharge: boolean;
   installedAt: string;
   createdBy: string;
+  createdByName?: string;
   createdAt: string;
   updatedAt: string;
 }

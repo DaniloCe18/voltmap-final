@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { googleEnabled, signIn } from "../lib/auth-client";
+import { signIn } from "../lib/auth-client";
 
 export function SocialButtons({ redirectTo = "/" }: { redirectTo?: string }) {
   const [loading, setLoading] = useState<"github" | "google" | null>(null);
@@ -27,8 +27,7 @@ export function SocialButtons({ redirectTo = "/" }: { redirectTo?: string }) {
         {loading === "github" ? "Redirigiendo…" : "Continuar con GitHub"}
       </button>
 
-      {googleEnabled && (
-        <button
+      <button
           type="button"
           className="btn btn-social"
           onClick={() => login("google")}
@@ -39,7 +38,6 @@ export function SocialButtons({ redirectTo = "/" }: { redirectTo?: string }) {
           </span>
           {loading === "google" ? "Redirigiendo…" : "Continuar con Google"}
         </button>
-      )}
     </div>
   );
 }

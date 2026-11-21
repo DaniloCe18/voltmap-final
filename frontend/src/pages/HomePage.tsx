@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
 import { CONNECTOR_LABELS, CONNECTOR_TYPES, type Paginated, type Station } from "../types/station";
 import { StationCard } from "../components/StationCard";
@@ -81,6 +81,9 @@ export function HomePage() {
               aria-label="Buscar estaciones"
             />
           </div>
+          <p className="small muted hero-ai">
+            ¿Preferís preguntar? <Link to="/assistant">Hablá con Volti, el asistente de IA →</Link>
+          </p>
         </div>
       </section>
 

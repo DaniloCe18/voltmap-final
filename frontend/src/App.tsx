@@ -10,6 +10,7 @@ import { NotFoundPage } from "./pages/NotFoundPage";
 import { AdminStationsPage } from "./pages/admin/AdminStationsPage";
 import { StationEditorPage } from "./pages/StationEditorPage";
 import { MyStationsPage } from "./pages/MyStationsPage";
+import { AssistantPage } from "./pages/AssistantPage";
 import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 
 function Layout() {
@@ -38,6 +39,7 @@ export default function App() {
         {/* Cualquier usuario logueado: registros propios */}
         <Route element={<RequireAuth />}>
           <Route path="my-stations" element={<MyStationsPage />} />
+          <Route path="assistant" element={<AssistantPage />} />
           <Route path="stations/new" element={<StationEditorPage />} />
           <Route path="stations/:id/edit" element={<StationEditorPage />} />
         </Route>

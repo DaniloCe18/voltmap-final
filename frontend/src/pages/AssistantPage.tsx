@@ -23,13 +23,16 @@ const TOOL_LABELS: Record<string, string> = {
   detalle_estacion: "📄 Consultó el detalle",
   estadisticas_red: "📊 Calculó estadísticas de la red",
   estimar_carga: "⏱️ Estimó tiempo y costo",
+  buscar_vehiculos: "🚗 Buscó vehículos",
+  detalle_vehiculo: "📋 Consultó el auto",
+  estaciones_compatibles: "🔌 Cruzó auto y estaciones",
 };
 
 const SUGGESTIONS = [
-  "¿Dónde cargo rápido en Córdoba con conector CCS2?",
+  "Tengo un BYD Dolphin, ¿dónde lo cargo en Córdoba y cuánto tardo?",
+  "¿Qué auto eléctrico con más de 400 km de autonomía se vende en Argentina?",
   "Voy de Buenos Aires a Mar del Plata, ¿dónde puedo parar a cargar?",
   "¿Cuál es la estación más barata con energía renovable?",
-  "¿Cuánto tardo en cargar del 20 al 80 % una batería de 75 kWh en un cargador de 150 kW?",
 ];
 
 const MAX_HISTORY = 20;

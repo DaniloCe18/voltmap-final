@@ -29,7 +29,10 @@ function Layout() {
       <footer className="footer">
         <div className="container small muted">
           VoltMap · Trabajo práctico full stack · Express + MongoDB + Better Auth + React ·{" "}
-          <Link to="/privacidad">Privacidad</Link>
+          <Link to="/privacidad">Privacidad</Link> ·{" "}
+          <a href="/api/docs" target="_blank" rel="noreferrer">
+            API (Swagger)
+          </a>
         </div>
       </footer>
       <Toaster />

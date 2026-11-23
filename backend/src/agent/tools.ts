@@ -33,7 +33,8 @@ const summarize = (s: StationLean) => ({
 
 export const searchStationsTool = tool(
   async ({ city, connectorType, minPowerKw, onlyAvailable, onlyRenewable, open24h, text, sortBy, limit }) => {
-    const filter: FilterQuery<Station> = {};
+    // El agente solo ve estaciones activas (las bajas lógicas no existen para el público)
+    const filter: FilterQuery<Station> = { active: { $ne: false } };
     if (city) filter.city = new RegExp(escapeRegex(city), "i");
     if (connectorType) filter.connectorType = connectorType;
     if (minPowerKw !== undefined) filter.powerKw = { $gte: minPowerKw };
@@ -73,7 +74,9 @@ export const stationDetailTool = tool(
   async ({ id }) => {
     if (!isValidObjectId(id)) return JSON.stringify({ error: "id inválido" });
     const station = await StationModel.findById(id).lean<StationLean>();
-    if (!station) return JSON.stringify({ error: "No existe una estación con ese id" });
+    if (!station || station.active === false) {
+      return JSON.stringify({ error: "No existe una estación con ese id" });
+    }
     return JSON.stringify({
       ...summarize(station),
       instaladaEl: new Date(station.installedAt).toISOString().slice(0, 10),
@@ -88,7 +91,8 @@ export const stationDetailTool = tool(
 
 export const networkStatsTool = tool(
   async ({ city }) => {
-    const match: FilterQuery<Station> = city ? { city: new RegExp(escapeRegex(city), "i") } : {};
+    const match: FilterQuery<Station> = { active: { $ne: false } };
+    if (city) match.city = new RegExp(escapeRegex(city), "i");
     const [stats] = await StationModel.aggregate([
       { $match: match },
       {

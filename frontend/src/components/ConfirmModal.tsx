@@ -28,10 +28,13 @@ export function ConfirmModal({
 }: Props) {
   const cancelRef = useRef<HTMLButtonElement>(null);
 
+  // Al abrir, el foco arranca en "Cancelar": confirmar tiene que ser una decisión explícita
+  useEffect(() => {
+    if (open) cancelRef.current?.focus();
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
-    // El foco arranca en "Cancelar": confirmar tiene que ser una decisión explícita
-    cancelRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !loading) onCancel();
     };

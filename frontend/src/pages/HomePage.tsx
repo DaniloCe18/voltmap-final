@@ -1,40 +1,39 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { api } from "../lib/api";
-import { CONNECTOR_LABELS, CONNECTOR_TYPES, type Paginated, type Station } from "../types/station";
+import { CONNECTOR_LABELS, CONNECTOR_TYPES } from "../types/station";
 import { StationCard } from "../components/StationCard";
 import { Pagination } from "../components/Pagination";
 import { Spinner } from "../components/Spinner";
+import { useGetCitiesQuery, useGetStationsQuery } from "../store/api";
+import { errorMessage } from "../store/errors";
 
 const FILTER_KEYS = ["search", "city", "connectorType", "available", "renewable", "minPower", "sort"];
 
 export function HomePage() {
   const [params, setParams] = useSearchParams();
-  const [result, setResult] = useState<Paginated<Station> | null>(null);
-  const [cities, setCities] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState(params.get("search") ?? "");
 
   const page = Number(params.get("page") ?? 1);
-  const queryString = params.toString();
 
-  useEffect(() => {
-    api<{ data: string[] }>("/stations/cities")
-      .then((r) => setCities(r.data))
-      .catch(() => setCities([]));
-  }, []);
-
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    const qs = new URLSearchParams(queryString);
-    if (!qs.has("limit")) qs.set("limit", "9");
-    api<Paginated<Station>>(`/stations?${qs.toString()}`)
-      .then(setResult)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [queryString]);
+  // Datos desde el estado global (RTK Query): se cachean y se actualizan solos
+  // cuando el admin crea, edita o da de baja una estación.
+  const { data: cities = [] } = useGetCitiesQuery();
+  const {
+    data: result,
+    isFetching: loading,
+    error: queryError,
+  } = useGetStationsQuery({
+    page,
+    limit: 9,
+    search: params.get("search") ?? undefined,
+    city: params.get("city") ?? undefined,
+    connectorType: params.get("connectorType") ?? undefined,
+    minPower: params.get("minPower") ?? undefined,
+    available: params.get("available") ?? undefined,
+    renewable: params.get("renewable") ?? undefined,
+    sort: params.get("sort") ?? undefined,
+  });
+  const error = queryError ? errorMessage(queryError) : null;
 
   // Búsqueda con debounce
   useEffect(() => {

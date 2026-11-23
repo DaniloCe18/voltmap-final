@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { authClient, useSession } from "../../lib/auth-client";
 import { formatDate } from "../../lib/format";
 import { Spinner } from "../../components/Spinner";
@@ -15,7 +16,7 @@ interface AdminUser {
   createdAt: Date | string;
 }
 
-/** Gestión de usuarios: alta (admin.createUser) y cambio de rol (admin.setRole) */
+/** Gestión de usuarios: alta (admin.createUser), cambio de rol (admin.setRole) y acceso a sus sesiones */
 export function AdminUsersPage() {
   const { data: session } = useSession();
   const [users, setUsers] = useState<AdminUser[] | null>(null);
@@ -70,6 +71,7 @@ export function AdminUsersPage() {
                 <th>Email</th>
                 <th>Registrado</th>
                 <th>Rol</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -92,6 +94,14 @@ export function AdminUsersPage() {
                         <option value="user">user</option>
                         <option value="admin">admin</option>
                       </select>
+                    </td>
+                    <td className="row-actions">
+                      <Link
+                        to={`/admin/sessions?userId=${u.id}&name=${encodeURIComponent(u.name)}`}
+                        className="btn btn-ghost btn-sm"
+                      >
+                        🔐 Sesiones
+                      </Link>
                     </td>
                   </tr>
                 );

@@ -349,3 +349,4 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
 .admin-nav a.active { background: var(--surface-2); color: var(--text); border-color: var(--accent); }
 .admin-nav a:hover { text-decoration: none; color: var(--text); }
 .table-thumb { width: 56px; height: 34px; object-fit: cover; border-radius: 6px; vertical-align: middle; margin-right: 0.5rem; }
+.filter-banner { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; cursor: default; }

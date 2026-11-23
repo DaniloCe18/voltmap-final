@@ -1,11 +1,18 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { api } from "../lib/api";
 import { formatDate, formatPower, formatPrice } from "../lib/format";
-import type { Paginated, Station } from "../types/station";
+import type { Station } from "../types/station";
 import { Pagination } from "./Pagination";
 import { Spinner } from "./Spinner";
 import { ConfirmModal } from "./ConfirmModal";
+import {
+  useDeleteStationMutation,
+  useGetStationsQuery,
+  useRestoreStationMutation,
+} from "../store/api";
+import { errorMessage } from "../store/errors";
+import { useAppDispatch } from "../store";
+import { notify } from "../store/notificationsSlice";
 
 type StatusFilter = "active" | "inactive" | "all";
 type PendingAction = { kind: "soft" | "hard"; station: Station } | null;
@@ -25,51 +32,52 @@ interface Props {
 
 /** Tabla ABM de estaciones del panel admin. */
 export function StationsManager({ eyebrow, title, extraActions, emptyText }: Props) {
+  const dispatch = useAppDispatch();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [result, setResult] = useState<Paginated<Station> | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("active");
   const [pending, setPending] = useState<PendingAction>(null);
-  const [working, setWorking] = useState(false);
 
-  const load = useCallback(() => {
-    const qs = new URLSearchParams({ page: String(page), limit: "10", status });
-    if (search) qs.set("search", search);
-    api<Paginated<Station>>(`/stations?${qs}`)
-      .then(setResult)
-      .catch((e: Error) => setError(e.message));
-  }, [page, search, status]);
-
+  // Espera a que el admin deje de escribir para no pedir en cada tecla
   useEffect(() => {
-    const t = setTimeout(load, 250);
+    const t = setTimeout(() => setDebouncedSearch(search), 250);
     return () => clearTimeout(t);
-  }, [load]);
+  }, [search]);
 
-  function afterChange(message: string) {
-    setNotice(message);
-    setError(null);
+  // Estado global (RTK Query): después de cada mutación el listado se vuelve a pedir solo
+  const { data: result, error: queryError } = useGetStationsQuery({
+    page,
+    limit: 10,
+    search: debouncedSearch,
+    status,
+  });
+  const [deleteStation, { isLoading: working }] = useDeleteStationMutation();
+  const [restoreStation] = useRestoreStationMutation();
+  const error = queryError ? errorMessage(queryError) : null;
+
+  // Si se borra el último registro de una página, volver a la anterior
+  function afterRemove() {
     if (result && result.data.length === 1 && page > 1) setPage(page - 1);
-    else load();
   }
 
   // Confirmación del modal: baja lógica (DELETE) o física (DELETE ?hard=true)
   async function confirmPending() {
     if (!pending) return;
     const { kind, station } = pending;
-    setWorking(true);
     try {
-      await api(`/stations/${station.id}${kind === "hard" ? "?hard=true" : ""}`, { method: "DELETE" });
-      afterChange(
-        kind === "hard"
-          ? `"${station.name}" se eliminó definitivamente`
-          : `"${station.name}" se dio de baja: ya no se ve en la vista pública`,
+      await deleteStation({ id: station.id, hard: kind === "hard" }).unwrap();
+      dispatch(
+        notify(
+          kind === "hard"
+            ? `"${station.name}" se eliminó definitivamente`
+            : `"${station.name}" se dio de baja: ya no se ve en la vista pública`,
+        ),
       );
+      if (kind === "hard" || status === "active") afterRemove();
     } catch (e) {
-      setError((e as Error).message);
+      dispatch(notify(errorMessage(e), "error"));
     } finally {
-      setWorking(false);
       setPending(null);
     }
   }
@@ -77,10 +85,11 @@ export function StationsManager({ eyebrow, title, extraActions, emptyText }: Pro
   // Reactivar una baja lógica: PATCH { active: true }
   async function restore(station: Station) {
     try {
-      await api(`/stations/${station.id}`, { method: "PATCH", body: JSON.stringify({ active: true }) });
-      afterChange(`"${station.name}" se reactivó y vuelve a verse en la vista pública`);
+      await restoreStation(station.id).unwrap();
+      dispatch(notify(`"${station.name}" se reactivó y vuelve a verse en la vista pública`));
+      if (status === "inactive") afterRemove();
     } catch (e) {
-      setError((e as Error).message);
+      dispatch(notify(errorMessage(e), "error"));
     }
   }
 
@@ -99,11 +108,6 @@ export function StationsManager({ eyebrow, title, extraActions, emptyText }: Pro
         </div>
       </div>
 
-      {notice && (
-        <div className="alert alert-success" onClick={() => setNotice(null)}>
-          {notice}
-        </div>
-      )}
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="status-tabs" role="tablist" aria-label="Filtrar por estado">
@@ -134,7 +138,7 @@ export function StationsManager({ eyebrow, title, extraActions, emptyText }: Pro
       />
 
       {!result ? (
-        <Spinner />
+        !error && <Spinner />
       ) : result.data.length === 0 ? (
         <div className="empty-state">
           <div className="big-icon">🔌</div>

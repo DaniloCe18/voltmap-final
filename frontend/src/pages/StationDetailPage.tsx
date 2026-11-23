@@ -1,30 +1,29 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { api, ApiError } from "../lib/api";
 import { useSession } from "../lib/auth-client";
 import { isAdmin } from "../lib/permissions";
 import { ConfirmModal } from "../components/ConfirmModal";
-import { CONNECTOR_LABELS, type Station } from "../types/station";
+import { CONNECTOR_LABELS } from "../types/station";
 import { chargeMinutes, formatDate, formatPower, formatPrice } from "../lib/format";
 import { PowerMeter } from "../components/StationCard";
 import { Spinner } from "../components/Spinner";
+import { useDeleteStationMutation, useGetStationQuery } from "../store/api";
+import { errorMessage, errorStatus } from "../store/errors";
+import { useAppDispatch } from "../store";
+import { notify } from "../store/notificationsSlice";
 
 export function StationDetailPage() {
-  const { id } = useParams();
+  const { id = "" } = useParams();
   const { data: session } = useSession();
   const navigate = useNavigate();
-  const [station, setStation] = useState<Station | null>(null);
-  const [error, setError] = useState<{ status: number; message: string } | null>(null);
+  const dispatch = useAppDispatch();
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    api<Station>(`/stations/${id}`)
-      .then(setStation)
-      .catch((e) =>
-        setError({ status: e instanceof ApiError ? e.status : 0, message: e.message }),
-      );
-  }, [id]);
+  const { data: station, error: queryError } = useGetStationQuery(id);
+  const [deleteStation, { isLoading: deleting }] = useDeleteStationMutation();
+  const error = queryError
+    ? { status: errorStatus(queryError), message: errorMessage(queryError) }
+    : null;
 
   if (error) {
     return (
@@ -46,14 +45,13 @@ export function StationDetailPage() {
   // Desde el detalle, "Dar de baja" hace una baja lógica (la física está en el panel)
   async function handleSoftDelete() {
     if (!station) return;
-    setDeleting(true);
     try {
-      await api(`/stations/${station.id}`, { method: "DELETE" });
+      await deleteStation({ id: station.id, hard: false }).unwrap();
+      dispatch(notify(`"${station.name}" se dio de baja: ya no se ve en la vista pública`));
       navigate("/admin");
     } catch (e) {
-      setError({ status: e instanceof ApiError ? e.status : 0, message: (e as Error).message });
+      dispatch(notify(errorMessage(e), "error"));
     } finally {
-      setDeleting(false);
       setConfirmOpen(false);
     }
   }

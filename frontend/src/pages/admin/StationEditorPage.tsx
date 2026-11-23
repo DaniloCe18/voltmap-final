@@ -1,11 +1,17 @@
-import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { api } from "../../lib/api";
+import { skipToken } from "@reduxjs/toolkit/query";
 import { toDateInput } from "../../lib/format";
-import type { Station } from "../../types/station";
 import type { StationFormValues } from "../../schemas/station";
 import { StationForm } from "../../components/StationForm";
 import { Spinner } from "../../components/Spinner";
+import {
+  useCreateStationMutation,
+  useGetStationQuery,
+  useUpdateStationMutation,
+} from "../../store/api";
+import { errorMessage, toApiError } from "../../store/errors";
+import { useAppDispatch } from "../../store";
+import { notify } from "../../store/notificationsSlice";
 
 /**
  * Alta (/admin/stations/new) y edición (/admin/stations/:id/edit).
@@ -14,23 +20,26 @@ import { Spinner } from "../../components/Spinner";
 export function StationEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const isEdit = Boolean(id);
-  const [station, setStation] = useState<Station | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!id) return;
-    api<Station>(`/stations/${id}`)
-      .then(setStation)
-      .catch((e: Error) => setError(e.message));
-  }, [id]);
+  // En el alta no hay nada que cargar (skipToken = no hacer la consulta)
+  const { data: station, error: queryError } = useGetStationQuery(id ?? skipToken);
+  const [createStation] = useCreateStationMutation();
+  const [updateStation] = useUpdateStationMutation();
+  const error = queryError ? errorMessage(queryError) : null;
 
   async function handleSubmit(values: StationFormValues) {
-    const saved = await api<Station>(isEdit ? `/stations/${id}` : "/stations", {
-      method: isEdit ? "PUT" : "POST",
-      body: JSON.stringify(values),
-    });
-    navigate(`/stations/${saved.id}`);
+    try {
+      const saved = id
+        ? await updateStation({ id, body: values }).unwrap()
+        : await createStation(values).unwrap();
+      dispatch(notify(isEdit ? `"${saved.name}" se actualizó` : `"${saved.name}" se creó`));
+      navigate(`/stations/${saved.id}`);
+    } catch (e) {
+      // El formulario muestra los errores de validación del backend en cada campo
+      throw toApiError(e);
+    }
   }
 
   let content;

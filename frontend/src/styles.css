@@ -312,3 +312,20 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
   border: 1px solid rgba(255, 181, 71, 0.5); background: rgba(255, 181, 71, 0.08); color: #ffcf85;
   border-radius: 10px; padding: 0.75rem 1rem; margin: 1rem 0;
 }
+
+/* ───── Notificaciones (toasts) ───── */
+.toaster {
+  position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 60;
+  display: flex; flex-direction: column; gap: 0.5rem; max-width: min(380px, calc(100% - 2.4rem));
+}
+.toast {
+  display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.75rem 0.9rem; border-radius: 12px;
+  background: var(--surface-2); border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  animation: pop-in 0.18s ease-out; font-size: 0.92rem;
+}
+.toast-success { border-color: rgba(61, 220, 151, 0.5); }
+.toast-success > span:first-child { color: var(--green); }
+.toast-error { border-color: rgba(255, 93, 108, 0.5); }
+.toast-error > span:first-child { color: var(--red); }
+.toast-msg { flex: 1; }
+.toast-close { background: none; border: 0; color: var(--muted); font-size: 1.1rem; cursor: pointer; line-height: 1; }

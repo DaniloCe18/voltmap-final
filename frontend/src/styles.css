@@ -350,3 +350,12 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
 .admin-nav a:hover { text-decoration: none; color: var(--text); }
 .table-thumb { width: 56px; height: 34px; object-fit: cover; border-radius: 6px; vertical-align: middle; margin-right: 0.5rem; }
 .filter-banner { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; cursor: default; }
+
+/* ───── Subida de imágenes ───── */
+.image-upload-box { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.image-upload-preview {
+  width: 220px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--bg-2);
+}
+.image-upload-preview.placeholder { display: grid; place-items: center; font-size: 2.2rem; }
+.image-upload-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem; }

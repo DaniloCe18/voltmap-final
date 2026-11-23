@@ -138,6 +138,15 @@ export const voltmapApi = createApi({
       invalidatesTags: (_r, _e, { id }) => [{ type: "Vehicle", id }, { type: "Vehicle", id: "LIST" }, "Brands"],
     }),
 
+    // ─── Imágenes (almacenamiento externo) ───
+    uploadImage: build.mutation<{ url: string; key: string }, File>({
+      query: (file) => {
+        const body = new FormData();
+        body.append("image", file);
+        return { url: "/uploads/image", method: "POST", body };
+      },
+    }),
+
     // ─── Sesiones activas (panel admin) ───
     getSessions: build.query<Paginated<ActiveSession>, { page?: number; userId?: string }>({
       query: (params) => ({ url: "/admin/sessions", params: cleanParams(params) }),
@@ -171,6 +180,7 @@ export const {
   useUpdateVehicleMutation,
   useRestoreVehicleMutation,
   useDeleteVehicleMutation,
+  useUploadImageMutation,
   useGetSessionsQuery,
   useRevokeSessionMutation,
   useRevokeUserSessionsMutation,

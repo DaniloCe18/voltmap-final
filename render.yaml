@@ -1,10 +1,10 @@
 # Blueprint de Render (opcional): New → Blueprint → elegir este repo.
 # Si preferís crear los servicios a mano desde el dashboard, usá los mismos valores.
-# Ajustá los nombres/URLs si "voltmap" ya está tomado en Render.
+# Si Render agrega letras al nombre (porque ya existe), actualizá las 3 URLs de abajo.
 services:
   # ─── Backend: Web Service ───
   - type: web
-    name: voltmap-danilo-api
+    name: voltmap-final-danilo-api
     runtime: node
     rootDir: backend
     plan: free
@@ -19,9 +19,9 @@ services:
       - key: BETTER_AUTH_SECRET
         generateValue: true
       - key: BETTER_AUTH_URL
-        value: https://voltmap-danilo.onrender.com
+        value: https://voltmap-final-danilo.onrender.com
       - key: FRONTEND_URL
-        value: https://voltmap-danilo.onrender.com
+        value: https://voltmap-final-danilo.onrender.com
       - key: GITHUB_CLIENT_ID
         sync: false
       - key: GITHUB_CLIENT_SECRET
@@ -49,7 +49,7 @@ services:
 
   # ─── Frontend: Static Site ───
   - type: web
-    name: voltmap-danilo
+    name: voltmap-final-danilo
     runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
@@ -58,7 +58,7 @@ services:
       # 1) La API se llama por /api: Render la proxea al backend (mismo origen → cookies OK)
       - type: rewrite
         source: /api/*
-        destination: https://voltmap-danilo-api.onrender.com/api/*
+        destination: https://voltmap-final-danilo-api.onrender.com/api/*
       # 2) SPA: F5 en cualquier ruta devuelve index.html
       - type: rewrite
         source: /*

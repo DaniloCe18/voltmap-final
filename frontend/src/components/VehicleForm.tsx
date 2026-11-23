@@ -6,6 +6,7 @@ import { BODY_LABELS, BODY_TYPES } from "../types/vehicle";
 import { CONNECTOR_LABELS, CONNECTOR_TYPES } from "../types/station";
 import { ApiError } from "../lib/api";
 import { Field } from "./StationForm";
+import { ImageUpload } from "./ImageUpload";
 
 interface Props {
   defaultValues?: Partial<VehicleFormValues>;
@@ -34,6 +35,7 @@ export function VehicleForm({ defaultValues, submitLabel, onSubmit }: Props) {
     register,
     handleSubmit,
     setError,
+    setValue,
     watch,
     formState: { errors, isSubmitting },
   } = useForm<VehicleFormValues>({
@@ -41,7 +43,7 @@ export function VehicleForm({ defaultValues, submitLabel, onSubmit }: Props) {
     defaultValues: { ...EMPTY, ...defaultValues },
   });
 
-  const [battery, range] = watch(["batteryKwh", "rangeKm"]);
+  const [battery, range, imageUrl] = watch(["batteryKwh", "rangeKm", "imageUrl"]);
   const efficiency = battery > 0 && range > 0 ? (range / battery).toFixed(1) : null;
 
   async function submit(values: VehicleFormValues) {
@@ -109,10 +111,14 @@ export function VehicleForm({ defaultValues, submitLabel, onSubmit }: Props) {
         <Field label="Fecha de lanzamiento" error={errors.releaseDate?.message}>
           <input type="date" {...register("releaseDate")} />
         </Field>
-        <Field label="URL de la imagen (opcional)" error={errors.imageUrl?.message}>
-          <input {...register("imageUrl")} placeholder="https://..." />
-        </Field>
       </div>
+
+      {/* La foto se sube al almacenamiento externo; el formulario guarda solo su URL */}
+      <ImageUpload
+        value={imageUrl}
+        error={errors.imageUrl?.message}
+        onChange={(url) => setValue("imageUrl", url, { shouldDirty: true, shouldValidate: true })}
+      />
 
       <div className="checks">
         <label className="check">

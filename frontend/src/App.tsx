@@ -9,8 +9,7 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { PrivacyPage } from "./pages/PrivacyPage";
 import { AdminStationsPage } from "./pages/admin/AdminStationsPage";
-import { StationEditorPage } from "./pages/StationEditorPage";
-import { MyStationsPage } from "./pages/MyStationsPage";
+import { StationEditorPage } from "./pages/admin/StationEditorPage";
 import { AssistantPage } from "./pages/AssistantPage";
 import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 
@@ -38,12 +37,9 @@ export default function App() {
         <Route index element={<HomePage />} />
         <Route path="stations/:id" element={<StationDetailPage />} />
 
-        {/* Cualquier usuario logueado: registros propios */}
+        {/* Privada: cualquier usuario logueado (sin sesión → /login) */}
         <Route element={<RequireAuth />}>
-          <Route path="my-stations" element={<MyStationsPage />} />
           <Route path="assistant" element={<AssistantPage />} />
-          <Route path="stations/new" element={<StationEditorPage />} />
-          <Route path="stations/:id/edit" element={<StationEditorPage />} />
         </Route>
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
@@ -51,6 +47,8 @@ export default function App() {
 
         <Route path="admin" element={<RequireAdmin />}>
           <Route index element={<AdminStationsPage />} />
+          <Route path="stations/new" element={<StationEditorPage />} />
+          <Route path="stations/:id/edit" element={<StationEditorPage />} />
           <Route path="users" element={<AdminUsersPage />} />
         </Route>
 

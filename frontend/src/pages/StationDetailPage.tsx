@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api";
 import { useSession } from "../lib/auth-client";
-import { canEditStation } from "../lib/permissions";
+import { isAdmin } from "../lib/permissions";
 import { CONNECTOR_LABELS, type Station } from "../types/station";
 import { chargeMinutes, formatDate, formatPower, formatPrice } from "../lib/format";
 import { PowerMeter } from "../components/StationCard";
@@ -38,13 +38,13 @@ export function StationDetailPage() {
 
   if (!station) return <Spinner />;
 
-  const canEdit = canEditStation(session?.user, station);
+  const canEdit = isAdmin(session?.user);
 
   async function handleDelete() {
     if (!station || !window.confirm(`¿Eliminar "${station.name}"?`)) return;
     try {
       await api(`/stations/${station.id}`, { method: "DELETE" });
-      navigate(session?.user.role === "admin" ? "/admin" : "/my-stations");
+      navigate("/admin");
     } catch (e) {
       window.alert((e as Error).message);
     }
@@ -73,7 +73,7 @@ export function StationDetailPage() {
         </div>
         {canEdit && (
           <div className="admin-actions">
-            <Link to={`/stations/${station.id}/edit`} className="btn btn-primary">
+            <Link to={`/admin/stations/${station.id}/edit`} className="btn btn-primary">
               Editar
             </Link>
             <button className="btn btn-danger" onClick={handleDelete}>

@@ -1,22 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { api } from "../lib/api";
-import { toDateInput } from "../lib/format";
-import { useSession } from "../lib/auth-client";
-import { canEditStation, isAdmin } from "../lib/permissions";
-import type { Station } from "../types/station";
-import type { StationFormValues } from "../schemas/station";
-import { StationForm } from "../components/StationForm";
-import { Spinner } from "../components/Spinner";
+import { api } from "../../lib/api";
+import { toDateInput } from "../../lib/format";
+import type { Station } from "../../types/station";
+import type { StationFormValues } from "../../schemas/station";
+import { StationForm } from "../../components/StationForm";
+import { Spinner } from "../../components/Spinner";
 
 /**
- * Alta (/stations/new) y edición (/stations/:id/edit).
- * Cualquier usuario logueado puede crear; editar solo el dueño o un admin.
+ * Alta (/admin/stations/new) y edición (/admin/stations/:id/edit).
+ * Ruta protegida por RequireAdmin: solo la ve un admin.
  */
 export function StationEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: session } = useSession();
   const isEdit = Boolean(id);
   const [station, setStation] = useState<Station | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -27,8 +24,6 @@ export function StationEditorPage() {
       .then(setStation)
       .catch((e: Error) => setError(e.message));
   }, [id]);
-
-  const backTo = isAdmin(session?.user) ? "/admin" : "/my-stations";
 
   async function handleSubmit(values: StationFormValues) {
     const saved = await api<Station>(isEdit ? `/stations/${id}` : "/stations", {
@@ -43,14 +38,6 @@ export function StationEditorPage() {
     content = <div className="alert alert-error">{error}</div>;
   } else if (isEdit && !station) {
     content = <Spinner />;
-  } else if (isEdit && station && !canEditStation(session?.user, station)) {
-    content = (
-      <div className="empty-state">
-        <div className="big-icon">🔒</div>
-        <h2>Sin permisos</h2>
-        <p className="muted">Solo podés editar las estaciones que cargaste vos.</p>
-      </div>
-    );
   } else {
     content = (
       <StationForm
@@ -79,13 +66,10 @@ export function StationEditorPage() {
 
   return (
     <section className="container admin narrow">
-      <Link to={backTo} className="btn btn-link">
-        ← Volver
+      <Link to="/admin" className="btn btn-link">
+        ← Volver al panel
       </Link>
       <h1>{isEdit ? "Editar estación" : "Nueva estación"}</h1>
-      {!isEdit && (
-        <p className="muted small">La estación va a quedar a tu nombre: solo vos (y los admins) van a poder editarla.</p>
-      )}
       {content}
     </section>
   );

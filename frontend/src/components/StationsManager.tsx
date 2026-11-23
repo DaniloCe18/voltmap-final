@@ -7,16 +7,14 @@ import { Pagination } from "./Pagination";
 import { Spinner } from "./Spinner";
 
 interface Props {
-  /** "all" = todas (panel admin) · "mine" = solo las del usuario logueado */
-  source: "all" | "mine";
   eyebrow: string;
   title: string;
   extraActions?: ReactNode;
   emptyText: string;
 }
 
-/** Tabla ABM reutilizada por el panel admin y por "Mis estaciones". */
-export function StationsManager({ source, eyebrow, title, extraActions, emptyText }: Props) {
+/** Tabla ABM de estaciones del panel admin. */
+export function StationsManager({ eyebrow, title, extraActions, emptyText }: Props) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [result, setResult] = useState<Paginated<Station> | null>(null);
@@ -26,11 +24,10 @@ export function StationsManager({ source, eyebrow, title, extraActions, emptyTex
   const load = useCallback(() => {
     const qs = new URLSearchParams({ page: String(page), limit: "10" });
     if (search) qs.set("search", search);
-    const path = source === "mine" ? "/stations/mine" : "/stations";
-    api<Paginated<Station>>(`${path}?${qs}`)
+    api<Paginated<Station>>(`/stations?${qs}`)
       .then(setResult)
       .catch((e: Error) => setError(e.message));
-  }, [page, search, source]);
+  }, [page, search]);
 
   useEffect(() => {
     const t = setTimeout(load, 250);
@@ -58,7 +55,7 @@ export function StationsManager({ source, eyebrow, title, extraActions, emptyTex
         </div>
         <div className="admin-actions">
           {extraActions}
-          <Link to="/stations/new" className="btn btn-primary">
+          <Link to="/admin/stations/new" className="btn btn-primary">
             + Nueva estación
           </Link>
         </div>
@@ -100,7 +97,7 @@ export function StationsManager({ source, eyebrow, title, extraActions, emptyTex
                   <th className="num">Potencia</th>
                   <th className="num">$/kWh</th>
                   <th>Estado</th>
-                  {source === "all" && <th>Cargada por</th>}
+                  <th>Cargada por</th>
                   <th>Instalada</th>
                   <th />
                 </tr>
@@ -120,10 +117,10 @@ export function StationsManager({ source, eyebrow, title, extraActions, emptyTex
                       <span className={`status-dot ${s.available ? "on" : "off"}`} />{" "}
                       {s.available ? "Activa" : "Inactiva"}
                     </td>
-                    {source === "all" && <td className="small">{s.createdByName || "—"}</td>}
+                    <td className="small">{s.createdByName || "—"}</td>
                     <td className="small">{formatDate(s.installedAt)}</td>
                     <td className="row-actions">
-                      <Link to={`/stations/${s.id}/edit`} className="btn btn-ghost btn-sm">
+                      <Link to={`/admin/stations/${s.id}/edit`} className="btn btn-ghost btn-sm">
                         Editar
                       </Link>
                       <button className="btn btn-danger btn-sm" onClick={() => handleDelete(s)}>

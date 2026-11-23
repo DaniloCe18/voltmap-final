@@ -76,6 +76,26 @@ Toda eliminación pide confirmación en una ventana modal con **Cancelar** y **C
 
 Tipos usados: **texto, número, booleano, fecha y enum**.
 
+## 🚗 Entidad: `Vehicle` (vehículo eléctrico)
+
+| Campo | Tipo | Reglas |
+|---|---|---|
+| `brand` | texto | 2–40 caracteres |
+| `model` | texto | 1–60 caracteres |
+| `bodyType` | enum | `hatchback`, `sedan`, `suv`, `pickup`, `van` |
+| `connectorType` | enum | mismo tipo que las estaciones (`CCS2`, `Type2`, `CHAdeMO`, `GBT`, `NACS`) |
+| `batteryKwh` | número | 5–250 kWh |
+| `rangeKm` | número | 30–1200 km |
+| `maxChargeKw` | número | potencia máxima de carga, 2–500 kW |
+| `priceUsd` | número | ≥ 0 |
+| `availableInArgentina` | booleano | se vende en el país |
+| `releaseDate` | fecha | desde 1990 |
+| `imageUrl` | texto | URL de la foto (opcional) |
+| `active` / `deletedAt` | booleano / fecha | baja lógica |
+| `kmPerKwh` | número (virtual) | eficiencia: `rangeKm / batteryKwh`, calculada |
+
+Se relaciona con las estaciones por el **tipo de conector**: un vehículo CCS2 puede cargar en las estaciones CCS2.
+
 ---
 
 ## 🏗️ Arquitectura
@@ -115,12 +135,22 @@ Base: `/api`
 | PATCH | `/api/stations/:id` | Actualizar campos sueltos o reactivar (`{ "active": true }`) | admin |
 | DELETE | `/api/stations/:id` | **Baja lógica**: la oculta de la vista pública (responde 200) | admin |
 | DELETE | `/api/stations/:id?hard=true` | **Baja física**: la borra de la base (responde 204) | admin |
+| GET | `/api/vehicles` | Listado paginado de vehículos con filtros (solo activos) | Público |
+| GET | `/api/vehicles/brands` | Marcas con vehículos (para filtros) | Público |
+| GET | `/api/vehicles/:id` | Detalle de un vehículo | Público |
+| POST | `/api/vehicles` | Crear vehículo | admin |
+| PUT | `/api/vehicles/:id` | Reemplazar vehículo | admin |
+| PATCH | `/api/vehicles/:id` | Actualizar campos o reactivar (`{ "active": true }`) | admin |
+| DELETE | `/api/vehicles/:id` | **Baja lógica** (200) | admin |
+| DELETE | `/api/vehicles/:id?hard=true` | **Baja física** (204) | admin |
 | POST | `/api/agent/chat` | Conversar con el agente de IA (máx. 15 mensajes cada 5 min) | user / admin (logueado) |
 | * | `/api/auth/*` | Endpoints de Better Auth (sign-up, sign-in, OAuth, sesión, admin) | Según endpoint |
 
 **Query params de `GET /api/stations`:** `page`, `limit` (máx. 50), `search`, `city`, `connectorType`, `minPower`, `available=true|false`, `renewable=true|false`, `sort=newest|oldest|power|price|name`, `status=active|inactive|all` (`inactive` y `all` solo para admin: 401 sin sesión, 403 con rol `user`).
 
-Respuesta:
+**Query params de `GET /api/vehicles`:** `page`, `limit` (máx. 50), `search` (marca o modelo), `brand`, `bodyType`, `connectorType`, `minRangeKm`, `availableInArgentina=true|false`, `sort=newest|range|price|battery|name`, `status=active|inactive|all` (solo admin).
+
+Respuesta de los listados:
 ```json
 { "data": [ ... ], "page": 1, "limit": 9, "total": 12, "totalPages": 2 }
 ```
@@ -155,7 +185,7 @@ En [`backend/requests.http`](backend/requests.http) hay ejemplos listos para pro
 cd backend
 cp .env.example .env      # completar las variables (ver tabla)
 npm install
-npm run seed              # crea admin + user de prueba y 12 estaciones de ejemplo
+npm run seed              # crea admin + user de prueba, 12 estaciones y 12 vehículos de ejemplo
 npm run dev               # http://localhost:3000
 ```
 
@@ -300,12 +330,12 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 ├── backend/
 │   ├── src/
 │   │   ├── agent/          # agente LangChain: tools, agente y controlador del chat
-│   │   ├── controllers/station.controller.ts
+│   │   ├── controllers/    # station.controller.ts, vehicle.controller.ts
 │   │   ├── lib/            # auth (Better Auth), db, env
 │   │   ├── middlewares/    # authMiddleware, requireRole, validateBody, rate-limit, errores
-│   │   ├── models/station.model.ts
-│   │   ├── routes/         # station.routes.ts, agent.routes.ts
-│   │   ├── schemas/station.schema.ts   # Zod
+│   │   ├── models/         # station.model.ts, vehicle.model.ts
+│   │   ├── routes/         # station.routes.ts, vehicle.routes.ts, agent.routes.ts
+│   │   ├── schemas/        # Zod: station.schema.ts, vehicle.schema.ts
 │   │   ├── scripts/        # seed.ts (datos de prueba), test-gemini.ts (diagnóstico de IA)
 │   │   ├── app.ts
 │   │   └── index.ts

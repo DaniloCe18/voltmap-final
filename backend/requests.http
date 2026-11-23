@@ -49,3 +49,34 @@ Content-Type: application/json
   "available": true,
   "installedAt": "2025-06-01"
 }
+
+### ─── Vehículos ───
+
+### Listado público con filtros
+GET {{base}}/vehicles?page=1&limit=5&availableInArgentina=true&sort=range
+
+### Marcas
+GET {{base}}/vehicles/brands
+
+### Crear (requiere sesión de admin) → 201
+POST {{base}}/vehicles
+Content-Type: application/json
+
+{
+  "brand": "BYD",
+  "model": "Dolphin Mini",
+  "bodyType": "hatchback",
+  "connectorType": "CCS2",
+  "batteryKwh": 38,
+  "rangeKm": 300,
+  "maxChargeKw": 40,
+  "priceUsd": 22990,
+  "availableInArgentina": true,
+  "releaseDate": "2024-02-01"
+}
+
+### Datos inválidos → 400
+POST {{base}}/vehicles
+Content-Type: application/json
+
+{ "brand": "X", "batteryKwh": "mucha", "bodyType": "moto" }

@@ -1,11 +1,12 @@
 /**
- * Crea los usuarios de prueba (admin y común) y carga estaciones de ejemplo.
+ * Crea los usuarios de prueba (admin y común) y carga datos de ejemplo en todos los modelos.
  * Uso: npm run seed  (lee las variables SEED_* del .env)
- * Los datos de las estaciones son ficticios.
+ * Las estaciones son ficticias; las especificaciones de los vehículos son aproximadas, de referencia.
  */
 import { auth } from "../lib/auth.js";
 import { authDb, connectDB, disconnectDB } from "../lib/db.js";
 import { StationModel } from "../models/station.model.js";
+import { VehicleModel } from "../models/vehicle.model.js";
 
 async function ensureUser(email: string, password: string, name: string, role: "admin" | "user") {
   const users = authDb.collection("user");
@@ -37,6 +38,21 @@ const sampleStations = [
   { name: "La Plata Diagonal 74", operator: "Carga Urbana", city: "La Plata", address: "Diagonal 74 y 8", connectorType: "Type2", powerKw: 7.4, pricePerKwh: 230, renewable: false, open24h: true, available: true, installedAt: "2022-07-14" },
 ];
 
+const sampleVehicles = [
+  { brand: "BYD", model: "Dolphin", bodyType: "hatchback", connectorType: "CCS2", batteryKwh: 60.4, rangeKm: 427, maxChargeKw: 88, priceUsd: 32990, availableInArgentina: true, releaseDate: "2021-08-01" },
+  { brand: "BYD", model: "Yuan Plus", bodyType: "suv", connectorType: "CCS2", batteryKwh: 60.5, rangeKm: 420, maxChargeKw: 88, priceUsd: 41990, availableInArgentina: true, releaseDate: "2022-02-01" },
+  { brand: "BYD", model: "Seal", bodyType: "sedan", connectorType: "CCS2", batteryKwh: 82.5, rangeKm: 570, maxChargeKw: 150, priceUsd: 49990, availableInArgentina: true, releaseDate: "2023-05-01" },
+  { brand: "Renault", model: "Kwid E-Tech", bodyType: "hatchback", connectorType: "CCS2", batteryKwh: 26.8, rangeKm: 230, maxChargeKw: 30, priceUsd: 24990, availableInArgentina: true, releaseDate: "2022-09-01" },
+  { brand: "Chevrolet", model: "Bolt EUV", bodyType: "suv", connectorType: "CCS2", batteryKwh: 65, rangeKm: 397, maxChargeKw: 55, priceUsd: 34990, availableInArgentina: true, releaseDate: "2021-02-14" },
+  { brand: "Nissan", model: "Leaf", bodyType: "hatchback", connectorType: "CHAdeMO", batteryKwh: 40, rangeKm: 270, maxChargeKw: 50, priceUsd: 33990, availableInArgentina: true, releaseDate: "2018-01-01" },
+  { brand: "Mini", model: "Cooper SE", bodyType: "hatchback", connectorType: "CCS2", batteryKwh: 32.6, rangeKm: 230, maxChargeKw: 50, priceUsd: 39990, availableInArgentina: true, releaseDate: "2020-03-01" },
+  { brand: "Tesla", model: "Model 3", bodyType: "sedan", connectorType: "NACS", batteryKwh: 60, rangeKm: 513, maxChargeKw: 170, priceUsd: 42990, availableInArgentina: false, releaseDate: "2017-07-28" },
+  { brand: "Volkswagen", model: "ID.4", bodyType: "suv", connectorType: "CCS2", batteryKwh: 77, rangeKm: 520, maxChargeKw: 135, priceUsd: 45000, availableInArgentina: false, releaseDate: "2020-09-01" },
+  { brand: "Hyundai", model: "Ioniq 5", bodyType: "suv", connectorType: "CCS2", batteryKwh: 77.4, rangeKm: 507, maxChargeKw: 220, priceUsd: 52000, availableInArgentina: false, releaseDate: "2021-04-01" },
+  { brand: "Ford", model: "F-150 Lightning", bodyType: "pickup", connectorType: "CCS2", batteryKwh: 98, rangeKm: 515, maxChargeKw: 155, priceUsd: 59990, availableInArgentina: false, releaseDate: "2022-04-26" },
+  { brand: "Peugeot", model: "e-Partner", bodyType: "van", connectorType: "CCS2", batteryKwh: 50, rangeKm: 275, maxChargeKw: 100, priceUsd: 38500, availableInArgentina: true, releaseDate: "2021-06-01" },
+];
+
 async function main() {
   const adminEmail = process.env.SEED_ADMIN_EMAIL;
   const adminPassword = process.env.SEED_ADMIN_PASSWORD;
@@ -65,6 +81,21 @@ async function main() {
     console.log(`🔌 ${sampleStations.length} estaciones de ejemplo cargadas`);
   } else {
     console.log(`🔌 Ya hay ${count} estaciones, no se cargan ejemplos`);
+  }
+
+  const vehicleCount = await VehicleModel.countDocuments();
+  if (vehicleCount === 0) {
+    await VehicleModel.insertMany(
+      sampleVehicles.map((v) => ({
+        ...v,
+        releaseDate: new Date(v.releaseDate),
+        createdBy: adminId,
+        createdByName: "Admin VoltMap",
+      })),
+    );
+    console.log(`🚗 ${sampleVehicles.length} vehículos de ejemplo cargados`);
+  } else {
+    console.log(`🚗 Ya hay ${vehicleCount} vehículos, no se cargan ejemplos`);
   }
 
   await disconnectDB();

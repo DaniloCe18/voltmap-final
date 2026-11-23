@@ -296,7 +296,7 @@ Las imágenes de ejemplo son **ilustraciones originales** (`backend/seed-assets/
 
 ## 🤖 Agente de IA: Volti (LangChain + Gemini)
 
-Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat`, que arma un agente con **LangChain** (`createAgent`), usa como modelo **Google Gemini** y le da 4 herramientas ([`backend/src/agent/tools.ts`](backend/src/agent/tools.ts)):
+Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat`, que arma un agente con **LangChain** (`createAgent`), usa como modelo **Google Gemini** y le da 7 herramientas ([`tools.ts`](backend/src/agent/tools.ts) y [`vehicle-tools.ts`](backend/src/agent/vehicle-tools.ts)):
 
 | Herramienta | Qué hace |
 |---|---|
@@ -304,6 +304,11 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 | `detalle_estacion` | Trae todos los datos de una estación por id |
 | `estadisticas_red` | Agregación en Mongo: totales, disponibles, renovables, precio promedio, ciudades |
 | `estimar_carga` | Calcula el tiempo y el costo de una carga (cuentas exactas, sin que el modelo las "adivine") |
+| `buscar_vehiculos` | Busca autos por marca, carrocería, conector, autonomía, precio o venta en Argentina |
+| `detalle_vehiculo` | Ficha de un auto con eficiencia y tiempo de carga rápida |
+| `estaciones_compatibles` | **Cruza los dos modelos**: dado un auto, lista las estaciones con su conector, con el tiempo y el costo de carga en cada una |
+
+Por ejemplo, ante *"Tengo un BYD Dolphin, ¿dónde lo cargo en Córdoba?"*, el agente encadena `buscar_vehiculos` → `estaciones_compatibles` y responde con links a las fichas.
 
 **Cómo funciona:** el modelo recibe la pregunta y **decide por su cuenta** qué herramientas llamar y con qué argumentos. Ve los resultados y, si hace falta, llama a otras (por ejemplo, busca, no encuentra nada, afloja un filtro y vuelve a buscar). Recién ahí arma la respuesta, con links a las estaciones. En el chat se puede desplegar la **traza de herramientas** que usó el agente en cada respuesta.
 

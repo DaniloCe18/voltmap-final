@@ -1,4 +1,5 @@
 import express from "express";
+import swaggerUi from "swagger-ui-express";
 import cors from "cors";
 import morgan from "morgan";
 import { toNodeHandler } from "better-auth/node";
@@ -9,6 +10,7 @@ import vehicleRoutes from "./routes/vehicle.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import agentRoutes from "./routes/agent.routes.js";
 import { isAgentConfigured } from "./agent/agent.js";
+import { swaggerDocument } from "./docs/swagger.js";
 import { errorHandler, notFound } from "./middlewares/error.js";
 
 export const app = express();
@@ -32,6 +34,19 @@ app.use(express.json());
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", agent: isAgentConfigured(), time: new Date().toISOString() });
 });
+
+// Documentación Swagger 2.0: interfaz en /api/docs y especificación en /api/docs.json
+app.get("/api/docs.json", (_req, res) => {
+  res.json(swaggerDocument);
+});
+app.use(
+  "/api/docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument, {
+    customSiteTitle: "VoltMap API · Swagger",
+    swaggerOptions: { withCredentials: true, persistAuthorization: true },
+  }),
+);
 
 app.use("/api/stations", stationRoutes);
 app.use("/api/vehicles", vehicleRoutes);

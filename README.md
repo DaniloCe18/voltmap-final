@@ -39,6 +39,18 @@ Todo usuario nuevo (por email, GitHub o Google) se registra con rol **`user`**.
 
 El listado público y el detalle no requieren sesión. Toda escritura exige rol `admin`.
 
+### Bajas lógica y física
+
+| | Baja lógica | Baja física |
+|---|---|---|
+| Cómo | `DELETE /api/stations/:id` | `DELETE /api/stations/:id?hard=true` |
+| Qué hace | Marca `active: false` y guarda `deletedAt` | Borra el documento de MongoDB |
+| Vista pública | Deja de verse | Deja de verse |
+| ¿Se puede deshacer? | Sí: **Reactivar** (`PATCH { "active": true }`) | No |
+| En el panel | Botón **Dar de baja** → modal de confirmación | Botón **Eliminar** → modal de confirmación |
+
+Toda eliminación pide confirmación en una ventana modal con **Cancelar** y **Confirmar**. En el panel, las pestañas *Activas / Dadas de baja / Todas* permiten ver y reactivar las bajas lógicas.
+
 ---
 
 ## 🧱 Entidad: `Station` (estación de carga)
@@ -56,6 +68,8 @@ El listado público y el detalle no requieren sesión. Toda escritura exige rol 
 | `open24h` | booleano | abierta las 24 h |
 | `available` | booleano | operativa o fuera de servicio |
 | `installedAt` | fecha | no puede ser futura |
+| `active` | booleano | `false` = dada de baja (baja lógica) |
+| `deletedAt` | fecha | cuándo se dio de baja (`null` si está activa) |
 | `createdBy` | texto | id del admin que la cargó (automático, no editable) |
 | `createdByName` | texto | nombre de quien la cargó (automático) |
 | `fastCharge` | booleano (virtual) | `powerKw >= 50`, calculado y no guardado |
@@ -71,17 +85,18 @@ Base: `/api`
 | Método | Ruta | Descripción | Rol requerido |
 |---|---|---|---|
 | GET | `/api/health` | Estado del servidor | Público |
-| GET | `/api/stations` | Listado paginado con búsqueda y filtros | Público |
+| GET | `/api/stations` | Listado paginado con búsqueda y filtros (solo activas) | Público |
 | GET | `/api/stations/cities` | Ciudades con estaciones (para filtros) | Público |
-| GET | `/api/stations/:id` | Detalle de una estación | Público |
+| GET | `/api/stations/:id` | Detalle de una estación (las dadas de baja dan 404, salvo para admin) | Público |
 | POST | `/api/stations` | Crear estación | admin |
 | PUT | `/api/stations/:id` | Reemplazar estación (todos los campos) | admin |
-| PATCH | `/api/stations/:id` | Actualizar campos sueltos | admin |
-| DELETE | `/api/stations/:id` | Eliminar estación | admin |
+| PATCH | `/api/stations/:id` | Actualizar campos sueltos o reactivar (`{ "active": true }`) | admin |
+| DELETE | `/api/stations/:id` | **Baja lógica**: la oculta de la vista pública (responde 200) | admin |
+| DELETE | `/api/stations/:id?hard=true` | **Baja física**: la borra de la base (responde 204) | admin |
 | POST | `/api/agent/chat` | Conversar con el agente de IA (máx. 15 mensajes cada 5 min) | user / admin (logueado) |
 | * | `/api/auth/*` | Endpoints de Better Auth (sign-up, sign-in, OAuth, sesión, admin) | Según endpoint |
 
-**Query params de `GET /api/stations`:** `page`, `limit` (máx. 50), `search`, `city`, `connectorType`, `minPower`, `available=true|false`, `renewable=true|false`, `sort=newest|oldest|power|price|name`.
+**Query params de `GET /api/stations`:** `page`, `limit` (máx. 50), `search`, `city`, `connectorType`, `minPower`, `available=true|false`, `renewable=true|false`, `sort=newest|oldest|power|price|name`, `status=active|inactive|all` (`inactive` y `all` solo para admin: 401 sin sesión, 403 con rol `user`).
 
 Respuesta:
 ```json
@@ -94,7 +109,7 @@ Respuesta:
 |---|---|
 | 200 | Lectura o edición OK |
 | 201 | Estación creada |
-| 204 | Estación eliminada |
+| 204 | Estación eliminada definitivamente (baja física) |
 | 400 | Error de validación (Zod). Devuelve `{ error, details: [{ field, message }] }` |
 | 401 | Ruta de escritura sin sesión |
 | 403 | Con sesión pero sin rol `admin` (por ejemplo, un `user` que intenta escribir) |

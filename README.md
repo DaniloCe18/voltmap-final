@@ -1,6 +1,9 @@
-# ⚡ VoltMap: estaciones de carga para autos eléctricos
+# ⚡ VoltMap: estaciones de carga y autos eléctricos
 
-**VoltMap** es un directorio colaborativo de **estaciones de carga para vehículos eléctricos** en Argentina. Cualquier persona puede buscar dónde cargar y filtrar por ciudad, tipo de conector, potencia, disponibilidad y si la estación usa **energía 100 % renovable**. Para cada estación, la app calcula el **tiempo y el costo estimados** de una carga del 10 al 80 %.
+**VoltMap** reúne dos cosas que necesita quien tiene (o quiere tener) un auto eléctrico en Argentina:
+
+- **Estaciones de carga**: dónde cargar, filtrando por ciudad, conector, potencia, disponibilidad y si la estación usa **energía 100 % renovable**, con el tiempo y el costo estimados de cada carga.
+- **Catálogo de autos eléctricos**: autonomía, batería, potencia de carga, precio y si se venden en el país. Cada auto muestra **en qué estaciones de la red puede cargar** (por tipo de conector) y cuánto tardaría en cada una.
 
 Los visitantes y usuarios consultan el catálogo; los **administradores** lo mantienen (alta, modificación y baja) y gestionan a los usuarios.
 
@@ -12,11 +15,20 @@ Además incluye **Volti**, un **agente de IA hecho con LangChain** (ver [más ab
 
 | | URL |
 |---|---|
-| **Frontend** (Static Site) | https://voltmap-danilo.onrender.com |
-| **Backend** (Web Service) | https://voltmap-danilo-api.onrender.com/api/health |
-| **Repositorio** | https://github.com/DaniloCe18/voltmap |
+| **Frontend** (Static Site) | https://voltmap-final-danilo.onrender.com |
+| **Backend** (Web Service) | https://voltmap-final-danilo-api.onrender.com/api/health |
+| **Repositorio** | https://github.com/DaniloCe18/voltmap-final |
+| **Documentación de la API** (Swagger 2.0) | https://voltmap-final-danilo.onrender.com/api/docs |
 
 > ⚠️ El backend está en el plan gratuito de Render: el primer request después de un rato de inactividad puede tardar unos 50 segundos.
+
+## 👥 Integrante y modelos
+
+Trabajo **individual**.
+
+| Integrante | Modelos a cargo (CRUD completo, backend y frontend) |
+|---|---|
+| **Danilo Cerasa** ([@DaniloCe18](https://github.com/DaniloCe18)) | `Station` (estaciones de carga) y `Vehicle` (vehículos eléctricos) |
 
 ## 👤 Usuarios de prueba
 
@@ -124,7 +136,7 @@ MongoDB Atlas (Mongoose para los modelos, driver nativo para Better Auth)
 
 Base: `/api`
 
-📘 **Documentación interactiva (Swagger 2.0):** `/api/docs` — por ejemplo https://voltmap-danilo.onrender.com/api/docs (en local, http://localhost:5173/api/docs). La especificación en JSON está en `/api/docs.json`.
+📘 **Documentación interactiva (Swagger 2.0):** `/api/docs` — por ejemplo https://voltmap-final-danilo.onrender.com/api/docs (en local, http://localhost:5173/api/docs). La especificación en JSON está en `/api/docs.json`.
 
 Para probar las rutas de admin desde Swagger: abrir la documentación desde la URL del **frontend**, ejecutar `POST /auth/sign-in/email` con el usuario admin de prueba y después cualquier otra ruta. La cookie de sesión se envía sola.
 
@@ -184,9 +196,41 @@ En [`backend/requests.http`](backend/requests.http) hay ejemplos listos para pro
 
 ---
 
+## 🔀 Flujo de trabajo
+
+Todo cambio entró a `main` mediante **Pull Request** (`main` está protegida: no admite commits directos). Cada PR describe qué se agregó y cómo verificarlo.
+
+| PR | Contenido |
+|---|---|
+| #1 | Base del proyecto (TP de cursada) con su historial de commits |
+| #2 | Escritura solo para admin (`user` de solo lectura) |
+| #3 | Bajas lógica y física con ventana modal de confirmación |
+| #4 | Estado global con Redux Toolkit y RTK Query |
+| #5 | Vehículos: API REST |
+| #6 | Vehículos: catálogo, detalle y ABM |
+| #7 | Panel de sesiones activas *(opcional)* |
+| #8 | Documentación Swagger 2.0 *(opcional)* |
+| #9 | Imágenes en almacenamiento externo *(opcional)* |
+| #10 | Agente de IA: herramientas de vehículos *(opcional)* |
+| #11 | Deploy del TP final y README |
+
+## 📋 Guía para la evaluación
+
+| Paso de la consigna | Dónde verlo |
+|---|---|
+| Historial sin secretos | `git log --all -- "*.env"` no devuelve nada · variables en [`backend/.env.example`](backend/.env.example) |
+| README e integrantes | Este archivo (secciones *Integrante y modelos* y *Arquitectura*) |
+| Pull Requests | Pestaña *Pull requests → Closed* (#1 a #11) |
+| API REST | `/api/stations` y `/api/vehicles` · probar en [`/api/docs`](https://voltmap-final-danilo.onrender.com/api/docs) |
+| Bajas lógica y física | Panel admin → *Dar de baja* / *Reactivar* / *Eliminar* (tabla en [Bajas lógica y física](#bajas-lógica-y-física)) |
+| Autenticación y roles | Login con email, GitHub y Google · `user` recibe 403 al escribir y "Sin permisos" en `/admin` |
+| Interfaz | Vista pública (`/`, `/vehicles`) · panel `/admin` con modal antes de eliminar · notificaciones globales (Redux) |
+| Deploy | Links de arriba · F5 funciona en cualquier ruta |
+| Opcionales | Google · paginación en ambos modelos · `/admin/sessions` · `/api/docs` · fotos en Supabase Storage · asistente `/assistant` |
+
 ## 🖥️ Correrlo en local
 
-**Requisitos:** Node 20+, una base MongoDB (Atlas o local) y una OAuth App de GitHub para desarrollo.
+**Requisitos:** Node 20+, una base MongoDB (Atlas o local), una OAuth App de GitHub para desarrollo, un bucket compatible con S3 (por ejemplo Supabase Storage, gratis) para las imágenes y una API key de Gemini para el asistente.
 
 ### 1. Backend
 
@@ -194,7 +238,7 @@ En [`backend/requests.http`](backend/requests.http) hay ejemplos listos para pro
 cd backend
 cp .env.example .env      # completar las variables (ver tabla)
 npm install
-npm run seed              # crea admin + user de prueba, 12 estaciones y 12 vehículos de ejemplo
+npm run seed              # admin + user de prueba, 12 estaciones, 12 vehículos y sus imágenes (si STORAGE_* está configurado)
 npm run dev               # http://localhost:3000
 ```
 
@@ -236,9 +280,9 @@ En [Google Cloud Console](https://console.cloud.google.com/):
 1. Crear un proyecto → **APIs y servicios → Pantalla de consentimiento de OAuth** (Google Auth Platform) → tipo **Externo**, con el nombre de la app y el email de soporte.
 2. Scopes: solo los básicos (`openid`, `email`, `profile`).
 3. **Credenciales → Crear credenciales → ID de cliente de OAuth → Aplicación web**:
-   - **Orígenes de JavaScript autorizados:** `http://localhost:5173` y `https://voltmap-danilo.onrender.com`
-   - **URIs de redireccionamiento autorizados:** `http://localhost:5173/api/auth/callback/google` y `https://voltmap-danilo.onrender.com/api/auth/callback/google`
-4. **Información de la marca:** página principal `https://voltmap-danilo.onrender.com`, política de privacidad `https://voltmap-danilo.onrender.com/privacidad` (página incluida en la app) y dominio autorizado `voltmap-danilo.onrender.com`. Google los exige para publicar.
+   - **Orígenes de JavaScript autorizados:** `http://localhost:5173` y `https://voltmap-final-danilo.onrender.com`
+   - **URIs de redireccionamiento autorizados:** `http://localhost:5173/api/auth/callback/google` y `https://voltmap-final-danilo.onrender.com/api/auth/callback/google`
+4. **Información de la marca:** página principal `https://voltmap-final-danilo.onrender.com`, política de privacidad `https://voltmap-final-danilo.onrender.com/privacidad` (página incluida en la app) y dominio autorizado `voltmap-final-danilo.onrender.com`. Google los exige para publicar.
 5. **Publicar la app:** en *Pantalla de consentimiento / Público (Audience)*, tocar **"Publicar app"** para que el estado pase de *Prueba* a **En producción**. En modo prueba solo pueden entrar las cuentas agregadas como testers. Publicada, **puede entrar cualquier cuenta de Google**. Con los scopes básicos no hace falta la verificación de Google.
 
 ### OAuth App de GitHub (desarrollo)
@@ -257,7 +301,7 @@ Se puede usar el blueprint [`render.yaml`](render.yaml) (New → Blueprint) o cr
 - **Root Directory:** `backend`
 - **Build Command:** `npm install --include=dev && npm run build`
 - **Start Command:** `npm start`
-- **Variables:** las de la tabla, con `NODE_ENV=production` y `BETTER_AUTH_URL` = `FRONTEND_URL` = `https://voltmap-danilo.onrender.com`
+- **Variables:** las de la tabla, con `NODE_ENV=production` y `BETTER_AUTH_URL` = `FRONTEND_URL` = `https://voltmap-final-danilo.onrender.com`
 
 ### Frontend: Static Site
 - **Root Directory:** `frontend`
@@ -267,15 +311,15 @@ Se puede usar el blueprint [`render.yaml`](render.yaml) (New → Blueprint) o cr
 
 | Source | Destination | Action |
 |---|---|---|
-| `/api/*` | `https://voltmap-danilo-api.onrender.com/api/*` | Rewrite |
+| `/api/*` | `https://voltmap-final-danilo-api.onrender.com/api/*` | Rewrite |
 | `/*` | `/index.html` | Rewrite |
 
 La primera regla hace que el frontend llame siempre a `/api` (mismo origen, así la cookie de sesión funciona sin problemas de third-party cookies). La segunda hace que **F5 funcione en cualquier ruta** de la SPA.
 
 ### OAuth App de GitHub (producción)
 Una segunda OAuth App, separada de la de desarrollo:
-- **Homepage URL:** `https://voltmap-danilo.onrender.com`
-- **Authorization callback URL:** `https://voltmap-danilo.onrender.com/api/auth/callback/github`
+- **Homepage URL:** `https://voltmap-final-danilo.onrender.com`
+- **Authorization callback URL:** `https://voltmap-final-danilo.onrender.com/api/auth/callback/github`
 
 (El callback apunta al **frontend**, porque `/api/*` se reescribe hacia el backend.)
 
@@ -330,27 +374,30 @@ Por ejemplo, ante *"Tengo un BYD Dolphin, ¿dónde lo cargo en Córdoba?"*, el a
 ## ✅ Funcionalidades
 
 **Obligatorias**
-- CRUD completo de estaciones, con validación Zod y errores 400 detallados
-- Better Auth con email/contraseña y GitHub, usuarios y sesiones guardados en Mongo
-- Roles `user` (por defecto, solo lectura) y `admin` (alta, modificación y baja)
-- Listado y detalle; login, registro y logout
-- Panel admin `/admin` protegido por rol (un usuario común ve "Sin permisos")
-- Formularios con React Hook Form + Zod; los errores del backend también se muestran en cada campo
-- Sesión persistente con `useSession()` (sobrevive al F5)
+- Dos modelos con CRUD completo (backend y frontend): **estaciones** y **vehículos**, con validación Zod (400 con detalle por campo) y códigos 201 / 401 / 403 / 404
+- **Baja lógica** (oculta y reactivable) y **baja física** (borra el documento) en ambos modelos
+- Better Auth con email/contraseña, GitHub y Google; usuarios y sesiones en MongoDB
+- Roles `user` (por defecto, solo lectura) y `admin` (alta, modificación y baja); rutas protegidas en backend (`authMiddleware` + `requireRole`) y frontend (redirección a login / "Sin permisos")
+- Vista pública (catálogos y detalle) que refleja al instante lo que hace el admin
+- Panel admin con ABM de ambos modelos y **ventana modal de confirmación** antes de toda eliminación
+- **Estado global** con Redux Toolkit + RTK Query (caché e invalidación) y notificaciones globales
+- Formularios con React Hook Form + Zod; los errores del backend se muestran en cada campo
+- Sesión persistente con `useSession()` (sobrevive al F5) y logout con redirección al inicio
+- Datos de ejemplo en todos los modelos (`npm run seed`)
 
 **Opcionales implementados**
-- ✅ Paginación, búsqueda y filtros (sincronizados con la URL, así se pueden compartir)
-- ✅ Login con Google, con la app publicada (cualquier cuenta de Google puede entrar)
-- ✅ Panel de usuarios, roles y sesiones: listar y crear usuarios (`authClient.admin.listUsers` / `createUser`), cambiar roles (`authClient.admin.setRole`) y **consultar y revocar sesiones activas** (`/admin/sessions`), una por una o todas las de un usuario
-- ✅ **Imágenes en almacenamiento externo** (Supabase Storage vía API S3): subida desde el panel, validación de tipo y tamaño, y solo la URL en la base
-- ✅ Documentación de la API con **Swagger 2.0** en `/api/docs` (todos los endpoints, parámetros, cuerpos, respuestas y códigos de estado)
+- ✅ Login con Google en producción (app publicada: cualquier cuenta de Google puede entrar)
+- ✅ Paginación en backend y frontend en **ambos modelos**, con búsqueda, filtros y orden sincronizados con la URL
+- ✅ Panel de usuarios, roles y sesiones: listar y crear usuarios, cambiar roles (`authClient.admin.setRole`) y **consultar y revocar sesiones activas** (`/admin/sessions`)
+- ✅ Agente LLM con herramientas (LangChain + Gemini) que consulta y cruza estaciones y vehículos
+- ✅ Documentación de la API con **Swagger 2.0** en `/api/docs`
+- ✅ **Imágenes en almacenamiento externo** (Supabase Storage vía API S3): subida desde el panel, validación de tipo real y tamaño, y solo la URL en la base
 
 **Extras**
-- 🤖 Agente de IA con LangChain (Volti), con herramientas sobre la base, traza visible de herramientas y rate limit
-- Estimación de tiempo y costo de carga, indicador de "carga rápida" y medidor visual de potencia
-- Link directo a Google Maps desde el detalle
-- Página de política de privacidad (`/privacidad`), requerida para publicar el login con Google
-- Script de diagnóstico del modelo de IA: `npx tsx src/scripts/test-gemini.ts` (lista los modelos disponibles y mide la respuesta)
+- Estaciones compatibles y tiempo de carga real en la ficha de cada auto (relación entre los modelos)
+- Estimación de tiempo y costo de carga, indicador de "carga rápida" y medidores visuales
+- Rate limit y traza visible de herramientas en el asistente
+- Página de política de privacidad (`/privacidad`) y link directo a Google Maps desde cada estación
 
 ---
 

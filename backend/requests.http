@@ -1,0 +1,51 @@
+### Pruebas rápidas de la API (extensión REST Client de VS Code)
+@base = http://localhost:3000/api
+
+### Health
+GET {{base}}/health
+
+### Listado (público) con filtros
+GET {{base}}/stations?page=1&limit=5&search=hub&minPower=50&available=true&sort=power
+
+### Ciudades
+GET {{base}}/stations/cities
+
+### Detalle inexistente → 404
+GET {{base}}/stations/000000000000000000000000
+
+### Crear sin sesión → 401
+POST {{base}}/stations
+Content-Type: application/json
+
+{ "name": "Test" }
+
+### Login como admin (guarda la cookie de sesión)
+POST {{base}}/auth/sign-in/email
+Content-Type: application/json
+Origin: http://localhost:5173
+
+{ "email": "admin@voltmap.dev", "password": "Admin1234!" }
+
+### Crear con datos inválidos → 400 con detalle
+POST {{base}}/stations
+Content-Type: application/json
+
+{ "name": "X", "powerKw": "mucho", "connectorType": "USB" }
+
+### Crear OK → 201
+POST {{base}}/stations
+Content-Type: application/json
+
+{
+  "name": "Estación de prueba",
+  "operator": "VoltMap Labs",
+  "city": "Buenos Aires",
+  "address": "Av. Corrientes 1234",
+  "connectorType": "CCS2",
+  "powerKw": 120,
+  "pricePerKwh": 400,
+  "renewable": true,
+  "open24h": false,
+  "available": true,
+  "installedAt": "2025-06-01"
+}

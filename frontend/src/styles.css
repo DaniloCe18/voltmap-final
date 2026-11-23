@@ -329,3 +329,23 @@ input[type="checkbox"] { width: auto; accent-color: var(--accent); }
 .toast-error > span:first-child { color: var(--red); }
 .toast-msg { flex: 1; }
 .toast-close { background: none; border: 0; color: var(--muted); font-size: 1.1rem; cursor: pointer; line-height: 1; }
+
+/* ───── Vehículos ───── */
+.vehicle-img {
+  width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px;
+  background: var(--bg-2); border: 1px solid var(--border); margin-bottom: 0.4rem;
+}
+.vehicle-img.placeholder { display: grid; place-items: center; font-size: 2.6rem; }
+.vehicle-img.large { aspect-ratio: 21 / 9; margin-bottom: 1rem; }
+.vehicle-card h3 .muted { font-weight: 500; }
+.section-title { margin: 2rem 0 0.8rem; font-size: 1.3rem; }
+.compat-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.8rem; }
+.compat-item { display: flex; flex-direction: column; gap: 0.2rem; color: var(--text); }
+.compat-item:hover { text-decoration: none; border-color: var(--accent); }
+.admin-nav { display: flex; gap: 0.4rem; flex-wrap: wrap; padding-top: 1.5rem; }
+.admin-nav a {
+  padding: 0.4rem 0.9rem; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); font-size: 0.9rem;
+}
+.admin-nav a.active { background: var(--surface-2); color: var(--text); border-color: var(--accent); }
+.admin-nav a:hover { text-decoration: none; color: var(--text); }
+.table-thumb { width: 56px; height: 34px; object-fit: cover; border-radius: 6px; vertical-align: middle; margin-right: 0.5rem; }

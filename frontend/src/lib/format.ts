@@ -22,3 +22,8 @@ export const toDateInput = (iso: string) => iso.slice(0, 10);
 
 /** Minutos aprox. para cargar 10 → 80 % de una batería de 60 kWh */
 export const chargeMinutes = (kw: number) => Math.round(((60 * 0.7) / (kw * 0.9)) * 60);
+
+const usd = new Intl.NumberFormat("es-AR", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+export const formatUsd = (n: number) => usd.format(n);
+
+export const formatNumber = (n: number) => new Intl.NumberFormat("es-AR", { maximumFractionDigits: 1 }).format(n);

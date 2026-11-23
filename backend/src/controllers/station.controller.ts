@@ -22,11 +22,6 @@ export async function listStations(req: Request, res: Response): Promise<void> {
   await sendList(req, res, {});
 }
 
-// GET /api/stations/mine → solo las estaciones del usuario logueado
-export async function listMyStations(req: Request, res: Response): Promise<void> {
-  await sendList(req, res, { createdBy: req.user!.id });
-}
-
 async function sendList(req: Request, res: Response, baseFilter: FilterQuery<Station>) {
   const parsed = listQuerySchema.safeParse(req.query);
   if (!parsed.success) {
@@ -89,7 +84,7 @@ export async function getStation(req: Request, res: Response): Promise<void> {
   res.json(station);
 }
 
-// POST /api/stations  (cualquier usuario logueado: queda a su nombre)
+// POST /api/stations  (admin) · guarda quién la cargó
 export async function createStation(req: Request, res: Response): Promise<void> {
   const station = await StationModel.create({
     ...req.body,
@@ -99,8 +94,8 @@ export async function createStation(req: Request, res: Response): Promise<void> 
   res.status(201).json(station);
 }
 
-// PUT /api/stations/:id   → reemplazo completo   (dueño o admin)
-// PATCH /api/stations/:id → actualización parcial (dueño o admin)
+// PUT /api/stations/:id   → reemplazo completo   (admin)
+// PATCH /api/stations/:id → actualización parcial (admin)
 // El dueño (createdBy) nunca se modifica: Zod descarta ese campo.
 export async function updateStation(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
@@ -119,7 +114,7 @@ export async function updateStation(req: Request, res: Response): Promise<void> 
   res.json(station);
 }
 
-// DELETE /api/stations/:id  (dueño o admin)
+// DELETE /api/stations/:id  (admin)
 export async function deleteStation(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
   if (!isValidObjectId(id)) {

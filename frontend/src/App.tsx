@@ -1,5 +1,6 @@
 import { Link, Outlet, Route, Routes } from "react-router-dom";
 import { Navbar } from "./components/Navbar";
+import { Toaster } from "./components/Toaster";
 import { RequireAdmin } from "./components/RequireAdmin";
 import { RequireAuth } from "./components/RequireAuth";
 import { HomePage } from "./pages/HomePage";
@@ -26,6 +27,7 @@ function Layout() {
           <Link to="/privacidad">Privacidad</Link>
         </div>
       </footer>
+      <Toaster />
     </>
   );
 }

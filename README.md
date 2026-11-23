@@ -78,6 +78,28 @@ Tipos usados: **texto, número, booleano, fecha y enum**.
 
 ---
 
+## 🏗️ Arquitectura
+
+```
+Navegador (React + Vite)
+  ├─ Páginas y formularios (React Hook Form + Zod)
+  ├─ Estado global: Redux Toolkit
+  │    ├─ voltmapApi (RTK Query): caché de estaciones, ciudades, etc.
+  │    └─ notifications: avisos globales (toasts)
+  └─ Sesión: Better Auth (useSession)
+        │  fetch a /api (mismo origen; en Render, rewrite al backend)
+        ▼
+API REST (Express + TypeScript)
+  ├─ routes → middlewares (authMiddleware, requireRole, validateBody) → controllers
+  ├─ Better Auth en /api/auth/* (usuarios, sesiones, OAuth)
+  └─ Agente de IA (LangChain + Gemini) en /api/agent/chat
+        │
+        ▼
+MongoDB Atlas (Mongoose para los modelos, driver nativo para Better Auth)
+```
+
+**Por qué RTK Query:** cada consulta (por ejemplo, el listado de estaciones) queda cacheada en el store. Cada mutación (crear, editar, dar de baja, reactivar o eliminar) declara qué datos quedan viejos (`invalidatesTags`), y RTK Query los vuelve a pedir solo. Por eso lo que el admin cambia en el panel **se refleja automáticamente en la vista pública**, sin recargar la página.
+
 ## 🛣️ Endpoints de la API
 
 Base: `/api`
@@ -293,6 +315,7 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 │   └── src/
 │       ├── components/     # Navbar, RequireAdmin, StationForm, StationCard…
 │       ├── lib/            # auth-client, api, format
+│       ├── store/          # Redux: store, api (RTK Query), notificaciones
 │       ├── pages/          # Home, Detail, Assistant, Login, Register, Privacy, admin/* (panel, editor, usuarios)
 │       └── schemas/        # Zod de formularios
 ├── render.yaml
@@ -301,5 +324,5 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 
 ## 🛠️ Stack
 **Backend:** Express 5 · TypeScript · MongoDB (Mongoose + driver nativo) · Better Auth (plugin admin) · Zod · LangChain + Google Gemini
-**Frontend:** React 19 · Vite · TypeScript · React Router 7 · React Hook Form · Zod · Better Auth client
+**Frontend:** React 19 · Vite · TypeScript · React Router 7 · Redux Toolkit + RTK Query · React Hook Form · Zod · Better Auth client
 **Deploy:** Render (Web Service + Static Site)

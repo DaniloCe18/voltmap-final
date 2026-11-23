@@ -3,6 +3,7 @@ import type { Paginated, Station } from "../types/station";
 import type { StationFormValues } from "../schemas/station";
 import type { Vehicle } from "../types/vehicle";
 import type { VehicleFormValues } from "../schemas/vehicle";
+import type { ActiveSession } from "../types/session";
 
 export interface StationListParams {
   page?: number;
@@ -31,7 +32,7 @@ export interface VehicleListParams {
 }
 
 /** Saca los parámetros vacíos para no mandar "?city=&search=" al backend */
-function cleanParams(params: StationListParams | VehicleListParams) {
+function cleanParams(params: object) {
   return Object.fromEntries(
     Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ""),
   );
@@ -46,7 +47,7 @@ function cleanParams(params: StationListParams | VehicleListParams) {
 export const voltmapApi = createApi({
   reducerPath: "voltmapApi",
   baseQuery: fetchBaseQuery({ baseUrl: "/api", credentials: "include" }),
-  tagTypes: ["Station", "Cities", "Vehicle", "Brands"],
+  tagTypes: ["Station", "Cities", "Vehicle", "Brands", "Session"],
   endpoints: (build) => ({
     getStations: build.query<Paginated<Station>, StationListParams>({
       query: (params) => ({ url: "/stations", params: cleanParams(params) }),
@@ -136,6 +137,22 @@ export const voltmapApi = createApi({
       }),
       invalidatesTags: (_r, _e, { id }) => [{ type: "Vehicle", id }, { type: "Vehicle", id: "LIST" }, "Brands"],
     }),
+
+    // ─── Sesiones activas (panel admin) ───
+    getSessions: build.query<Paginated<ActiveSession>, { page?: number; userId?: string }>({
+      query: (params) => ({ url: "/admin/sessions", params: cleanParams(params) }),
+      providesTags: ["Session"],
+    }),
+
+    revokeSession: build.mutation<void, string>({
+      query: (id) => ({ url: `/admin/sessions/${id}`, method: "DELETE" }),
+      invalidatesTags: ["Session"],
+    }),
+
+    revokeUserSessions: build.mutation<{ revoked: number }, string>({
+      query: (userId) => ({ url: `/admin/users/${userId}/sessions`, method: "DELETE" }),
+      invalidatesTags: ["Session"],
+    }),
   }),
 });
 
@@ -154,4 +171,7 @@ export const {
   useUpdateVehicleMutation,
   useRestoreVehicleMutation,
   useDeleteVehicleMutation,
+  useGetSessionsQuery,
+  useRevokeSessionMutation,
+  useRevokeUserSessionsMutation,
 } = voltmapApi;

@@ -20,7 +20,11 @@ const stationSchema = new Schema(
     open24h: { type: Boolean, default: false },
     available: { type: Boolean, default: true },
     installedAt: { type: Date, required: true },
-    // Dueño del registro (id y nombre del usuario que la cargó)
+    // Baja lógica: una estación dada de baja deja de verse en la vista pública,
+    // pero sigue en la base y se puede reactivar. La baja física la borra.
+    active: { type: Boolean, default: true, index: true },
+    deletedAt: { type: Date, default: null },
+    // Quién la cargó (id y nombre del admin)
     createdBy: { type: String, required: true, index: true },
     createdByName: { type: String, default: "" },
   },

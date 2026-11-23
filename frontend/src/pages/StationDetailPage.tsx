@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../lib/api";
 import { useSession } from "../lib/auth-client";
 import { isAdmin } from "../lib/permissions";
+import { ConfirmModal } from "../components/ConfirmModal";
 import { CONNECTOR_LABELS, type Station } from "../types/station";
 import { chargeMinutes, formatDate, formatPower, formatPrice } from "../lib/format";
 import { PowerMeter } from "../components/StationCard";
@@ -14,6 +15,8 @@ export function StationDetailPage() {
   const navigate = useNavigate();
   const [station, setStation] = useState<Station | null>(null);
   const [error, setError] = useState<{ status: number; message: string } | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     api<Station>(`/stations/${id}`)
@@ -40,13 +43,18 @@ export function StationDetailPage() {
 
   const canEdit = isAdmin(session?.user);
 
-  async function handleDelete() {
-    if (!station || !window.confirm(`¿Eliminar "${station.name}"?`)) return;
+  // Desde el detalle, "Dar de baja" hace una baja lógica (la física está en el panel)
+  async function handleSoftDelete() {
+    if (!station) return;
+    setDeleting(true);
     try {
       await api(`/stations/${station.id}`, { method: "DELETE" });
       navigate("/admin");
     } catch (e) {
-      window.alert((e as Error).message);
+      setError({ status: e instanceof ApiError ? e.status : 0, message: (e as Error).message });
+    } finally {
+      setDeleting(false);
+      setConfirmOpen(false);
     }
   }
   const fullCost = station.pricePerKwh * 42; // 10→80 % de 60 kWh
@@ -76,12 +84,21 @@ export function StationDetailPage() {
             <Link to={`/admin/stations/${station.id}/edit`} className="btn btn-primary">
               Editar
             </Link>
-            <button className="btn btn-danger" onClick={handleDelete}>
-              Eliminar
-            </button>
+            {station.active !== false && (
+              <button className="btn btn-danger" onClick={() => setConfirmOpen(true)}>
+                Dar de baja
+              </button>
+            )}
           </div>
         )}
       </div>
+
+      {station.active === false && (
+        <div className="banner-inactive">
+          Esta estación está <strong>dada de baja</strong> y no se ve en la vista pública. Solo la ven
+          los administradores. Podés reactivarla desde el panel.
+        </div>
+      )}
 
       <div className="detail-grid">
         <div className="card stat-big">
@@ -140,6 +157,20 @@ export function StationDetailPage() {
           <dd>{formatDate(station.updatedAt)}</dd>
         </div>
       </dl>
+      <ConfirmModal
+        open={confirmOpen}
+        variant="warning"
+        title="¿Dar de baja la estación?"
+        confirmLabel="Sí, dar de baja"
+        loading={deleting}
+        onConfirm={handleSoftDelete}
+        onCancel={() => setConfirmOpen(false)}
+      >
+        <p>
+          <strong>{station.name}</strong> dejará de verse en la vista pública.
+        </p>
+        <p>Es una baja lógica: la podés reactivar desde el panel de administración.</p>
+      </ConfirmModal>
     </section>
   );
 }

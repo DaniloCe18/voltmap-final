@@ -49,8 +49,10 @@ export const stationSchema = z.object({
 // (los campos desconocidos como id o createdBy se descartan)
 export const createStationSchema = stationSchema;
 export const replaceStationSchema = stationSchema;
+// PATCH también permite reactivar una estación dada de baja: { "active": true }
 export const updateStationSchema = stationSchema
   .partial()
+  .extend({ active: bool("active").optional() })
   .refine((data) => Object.keys(data).length > 0, "Enviá al menos un campo para actualizar");
 
 const boolQuery = z
@@ -70,6 +72,16 @@ export const listQuerySchema = z.object({
   sort: z
     .enum(["newest", "oldest", "power", "price", "name"])
     .default("newest"),
+  // Bajas lógicas: el público solo ve las activas; "inactive" y "all" son solo para admin
+  status: z.enum(["active", "inactive", "all"]).default("active"),
+});
+
+// DELETE /api/stations/:id?hard=true → baja física (por defecto, baja lógica)
+export const deleteQuerySchema = z.object({
+  hard: z
+    .enum(["true", "false"], { errorMap: () => ({ message: "hard debe ser true o false" }) })
+    .optional()
+    .transform((v) => v === "true"),
 });
 
 export type StationInput = z.infer<typeof stationSchema>;

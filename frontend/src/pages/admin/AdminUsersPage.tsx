@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { authClient, useSession } from "../../lib/auth-client";
 import { formatDate } from "../../lib/format";
 import { Spinner } from "../../components/Spinner";
@@ -49,9 +48,6 @@ export function AdminUsersPage() {
 
   return (
     <section className="container admin">
-      <Link to="/admin" className="btn btn-link">
-        ← Volver al panel
-      </Link>
       <div className="admin-header">
         <div>
           <p className="eyebrow mono">// gestión de accesos</p>

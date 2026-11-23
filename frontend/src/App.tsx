@@ -11,6 +11,10 @@ import { NotFoundPage } from "./pages/NotFoundPage";
 import { PrivacyPage } from "./pages/PrivacyPage";
 import { AdminStationsPage } from "./pages/admin/AdminStationsPage";
 import { StationEditorPage } from "./pages/admin/StationEditorPage";
+import { VehiclesPage } from "./pages/VehiclesPage";
+import { VehicleDetailPage } from "./pages/VehicleDetailPage";
+import { AdminVehiclesPage } from "./pages/admin/AdminVehiclesPage";
+import { VehicleEditorPage } from "./pages/admin/VehicleEditorPage";
 import { AssistantPage } from "./pages/AssistantPage";
 import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 
@@ -38,6 +42,8 @@ export default function App() {
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="stations/:id" element={<StationDetailPage />} />
+        <Route path="vehicles" element={<VehiclesPage />} />
+        <Route path="vehicles/:id" element={<VehicleDetailPage />} />
 
         {/* Privada: cualquier usuario logueado (sin sesión → /login) */}
         <Route element={<RequireAuth />}>
@@ -51,6 +57,9 @@ export default function App() {
           <Route index element={<AdminStationsPage />} />
           <Route path="stations/new" element={<StationEditorPage />} />
           <Route path="stations/:id/edit" element={<StationEditorPage />} />
+          <Route path="vehicles" element={<AdminVehiclesPage />} />
+          <Route path="vehicles/new" element={<VehicleEditorPage />} />
+          <Route path="vehicles/:id/edit" element={<VehicleEditorPage />} />
           <Route path="users" element={<AdminUsersPage />} />
         </Route>
 

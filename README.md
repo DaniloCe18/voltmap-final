@@ -31,7 +31,7 @@ Todo usuario nuevo (por email, GitHub o Google) se registra con rol **`user`**.
 
 | Acción | Visitante (sin sesión) | `user` | `admin` |
 |---|:-:|:-:|:-:|
-| Ver listado y detalle (vista pública) | ✅ | ✅ | ✅ |
+| Ver estaciones y vehículos (vista pública) | ✅ | ✅ | ✅ |
 | Chatear con el asistente de IA | ❌ (→ login) | ✅ | ✅ |
 | Crear, modificar y eliminar | ❌ (401) | ❌ (403) | ✅ |
 | Panel admin `/admin` | ❌ (→ login) | ❌ ("Sin permisos") | ✅ |
@@ -94,7 +94,7 @@ Tipos usados: **texto, número, booleano, fecha y enum**.
 | `active` / `deletedAt` | booleano / fecha | baja lógica |
 | `kmPerKwh` | número (virtual) | eficiencia: `rangeKm / batteryKwh`, calculada |
 
-Se relaciona con las estaciones por el **tipo de conector**: un vehículo CCS2 puede cargar en las estaciones CCS2.
+Se relaciona con las estaciones por el **tipo de conector**: el detalle de cada vehículo muestra las estaciones compatibles de la red y el tiempo de carga estimado en cada una (limitado por la potencia que acepta el auto).
 
 ---
 
@@ -343,10 +343,10 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 │   └── requests.http
 ├── frontend/
 │   └── src/
-│       ├── components/     # Navbar, RequireAdmin, StationForm, StationCard…
+│       ├── components/     # Navbar, RequireAdmin, AdminNav, ConfirmModal, Station/Vehicle Form, Card y Manager…
 │       ├── lib/            # auth-client, api, format
 │       ├── store/          # Redux: store, api (RTK Query), notificaciones
-│       ├── pages/          # Home, Detail, Assistant, Login, Register, Privacy, admin/* (panel, editor, usuarios)
+│       ├── pages/          # Home, StationDetail, Vehicles, VehicleDetail, Assistant, Login, Register, Privacy, admin/*
 │       └── schemas/        # Zod de formularios
 ├── render.yaml
 └── README.md

@@ -25,6 +25,7 @@ export function Navbar() {
           <NavLink to="/" end>
             Estaciones
           </NavLink>
+          <NavLink to="/vehicles">Vehículos</NavLink>
           <NavLink to="/assistant">🤖 Asistente IA</NavLink>
           {isAdmin && <NavLink to="/admin">Panel admin</NavLink>}
         </nav>

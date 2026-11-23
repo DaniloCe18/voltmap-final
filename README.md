@@ -124,9 +124,14 @@ MongoDB Atlas (Mongoose para los modelos, driver nativo para Better Auth)
 
 Base: `/api`
 
+📘 **Documentación interactiva (Swagger 2.0):** `/api/docs` — por ejemplo https://voltmap-danilo.onrender.com/api/docs (en local, http://localhost:5173/api/docs). La especificación en JSON está en `/api/docs.json`.
+
+Para probar las rutas de admin desde Swagger: abrir la documentación desde la URL del **frontend**, ejecutar `POST /auth/sign-in/email` con el usuario admin de prueba y después cualquier otra ruta. La cookie de sesión se envía sola.
+
 | Método | Ruta | Descripción | Rol requerido |
 |---|---|---|---|
 | GET | `/api/health` | Estado del servidor | Público |
+| GET | `/api/docs` | Documentación Swagger 2.0 (interfaz) | Público |
 | GET | `/api/stations` | Listado paginado con búsqueda y filtros (solo activas) | Público |
 | GET | `/api/stations/cities` | Ciudades con estaciones (para filtros) | Público |
 | GET | `/api/stations/:id` | Detalle de una estación (las dadas de baja dan 404, salvo para admin) | Público |
@@ -316,6 +321,7 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 - ✅ Paginación, búsqueda y filtros (sincronizados con la URL, así se pueden compartir)
 - ✅ Login con Google, con la app publicada (cualquier cuenta de Google puede entrar)
 - ✅ Panel de usuarios, roles y sesiones: listar y crear usuarios (`authClient.admin.listUsers` / `createUser`), cambiar roles (`authClient.admin.setRole`) y **consultar y revocar sesiones activas** (`/admin/sessions`), una por una o todas las de un usuario
+- ✅ Documentación de la API con **Swagger 2.0** en `/api/docs` (todos los endpoints, parámetros, cuerpos, respuestas y códigos de estado)
 
 **Extras**
 - 🤖 Agente de IA con LangChain (Volti), con herramientas sobre la base, traza visible de herramientas y rate limit
@@ -333,6 +339,7 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 ├── backend/
 │   ├── src/
 │   │   ├── agent/          # agente LangChain: tools, agente y controlador del chat
+│   │   ├── docs/           # swagger.ts (especificación Swagger 2.0)
 │   │   ├── controllers/    # station.controller.ts, vehicle.controller.ts
 │   │   ├── lib/            # auth (Better Auth), db, env
 │   │   ├── middlewares/    # authMiddleware, requireRole, validateBody, rate-limit, errores
@@ -356,6 +363,6 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 ```
 
 ## 🛠️ Stack
-**Backend:** Express 5 · TypeScript · MongoDB (Mongoose + driver nativo) · Better Auth (plugin admin) · Zod · LangChain + Google Gemini
+**Backend:** Express 5 · TypeScript · Swagger 2.0 (swagger-ui-express) · MongoDB (Mongoose + driver nativo) · Better Auth (plugin admin) · Zod · LangChain + Google Gemini
 **Frontend:** React 19 · Vite · TypeScript · React Router 7 · Redux Toolkit + RTK Query · React Hook Form · Zod · Better Auth client
 **Deploy:** Render (Web Service + Static Site)

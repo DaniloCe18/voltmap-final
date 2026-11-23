@@ -8,6 +8,8 @@ import { env, isProduction } from "./lib/env.js";
 import stationRoutes from "./routes/station.routes.js";
 import vehicleRoutes from "./routes/vehicle.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import uploadRoutes from "./routes/upload.routes.js";
+import { isStorageConfigured } from "./lib/storage.js";
 import agentRoutes from "./routes/agent.routes.js";
 import { isAgentConfigured } from "./agent/agent.js";
 import { swaggerDocument } from "./docs/swagger.js";
@@ -32,7 +34,12 @@ app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use(express.json());
 
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", agent: isAgentConfigured(), time: new Date().toISOString() });
+  res.json({
+    status: "ok",
+    agent: isAgentConfigured(),
+    storage: isStorageConfigured(),
+    time: new Date().toISOString(),
+  });
 });
 
 // Documentación Swagger 2.0: interfaz en /api/docs y especificación en /api/docs.json
@@ -51,6 +58,7 @@ app.use(
 app.use("/api/stations", stationRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/uploads", uploadRoutes);
 app.use("/api/agent", agentRoutes);
 
 app.use(notFound);

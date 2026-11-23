@@ -32,6 +32,18 @@ services:
         sync: false
       - key: GOOGLE_API_KEY
         sync: false
+      - key: STORAGE_ENDPOINT
+        sync: false
+      - key: STORAGE_REGION
+        sync: false
+      - key: STORAGE_BUCKET
+        sync: false
+      - key: STORAGE_ACCESS_KEY_ID
+        sync: false
+      - key: STORAGE_SECRET_ACCESS_KEY
+        sync: false
+      - key: STORAGE_PUBLIC_URL
+        sync: false
       - key: GEMINI_MODEL
         value: gemini-3.5-flash-lite
 

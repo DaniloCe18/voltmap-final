@@ -7,6 +7,7 @@ import { auth } from "../lib/auth.js";
 import { authDb, connectDB, disconnectDB } from "../lib/db.js";
 import { StationModel } from "../models/station.model.js";
 import { VehicleModel } from "../models/vehicle.model.js";
+import { uploadSampleVehicleImages } from "./vehicle-images.js";
 
 async function ensureUser(email: string, password: string, name: string, role: "admin" | "user") {
   const users = authDb.collection("user");
@@ -97,6 +98,9 @@ async function main() {
   } else {
     console.log(`🚗 Ya hay ${vehicleCount} vehículos, no se cargan ejemplos`);
   }
+
+  // Fotos de ejemplo en el almacenamiento externo (si está configurado)
+  await uploadSampleVehicleImages();
 
   await disconnectDB();
   console.log("✅ Seed terminado");

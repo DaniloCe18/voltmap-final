@@ -194,6 +194,7 @@ export const swaggerDocument = {
     { name: "Vehículos", description: "Vehículos eléctricos" },
     { name: "Auth", description: "Better Auth (email/contraseña, sesión)" },
     { name: "Admin", description: "Sesiones activas (solo admin)" },
+    { name: "Imágenes", description: "Subida al almacenamiento externo (solo admin)" },
     { name: "Agente IA", description: "Asistente con LangChain" },
     { name: "Sistema" },
   ],
@@ -331,6 +332,31 @@ export const swaggerDocument = {
       },
     },
 
+    "/uploads/image": {
+      post: {
+        tags: ["Imágenes"],
+        summary: "Subir una foto al almacenamiento externo (solo admin)",
+        description: "Guarda el archivo en el bucket (S3/Supabase/R2) y devuelve su URL pública, que es lo que se guarda en el vehículo (imageUrl).",
+        consumes: ["multipart/form-data"],
+        security: [{ sessionCookie: [] }],
+        parameters: [
+          { name: "image", in: "formData", type: "file", required: true, description: "JPG, PNG o WebP de hasta 3 MB" },
+        ],
+        responses: {
+          201: r.ok({
+            type: "object",
+            properties: {
+              url: { type: "string", example: "https://xyz.supabase.co/storage/v1/object/public/voltmap/vehicles/1f2e.jpg" },
+              key: { type: "string", example: "vehicles/1f2e.jpg" },
+            },
+          }, "Subida"),
+          400: { description: "Archivo faltante, muy grande o que no es una imagen válida", schema: ref("Error") },
+          401: r.e401,
+          403: r.e403,
+          503: { description: "Almacenamiento no configurado", schema: ref("Error") },
+        },
+      },
+    },
     "/admin/sessions": {
       get: {
         tags: ["Admin"],

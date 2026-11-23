@@ -17,9 +17,12 @@ const listQuerySchema = z.object({
 });
 
 // Better Auth guarda los ids como ObjectId; se aceptan también como texto por las dudas
-function idVariants(id: string): unknown[] {
+function idVariants(id: string): (ObjectId | string)[] {
   return ObjectId.isValid(id) ? [new ObjectId(id), id] : [id];
 }
+
+// En Express 5 los parámetros de ruta se tipan como string | string[]
+const param = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value) ?? "";
 
 // GET /api/admin/sessions?page&limit&userId → sesiones vigentes con los datos del usuario
 export async function listSessions(req: Request, res: Response): Promise<void> {
@@ -79,12 +82,12 @@ export async function listSessions(req: Request, res: Response): Promise<void> {
 
 // DELETE /api/admin/sessions/:id → revocar una sesión
 export async function revokeSession(req: Request, res: Response): Promise<void> {
-  const { id } = req.params;
+  const id = param(req.params.id);
   if (String(req.session?.id) === id) {
     res.status(400).json({ error: "No podés revocar tu propia sesión desde acá: usá \"Salir\"" });
     return;
   }
-  const result = await sessions().deleteOne({ _id: { $in: idVariants(id) } } as Filter<Document>);
+  const result = await sessions().deleteOne({ _id: { $in: idVariants(id) } } as unknown as Filter<Document>);
   if (result.deletedCount === 0) {
     res.status(404).json({ error: "Sesión no encontrada (puede que ya haya vencido)" });
     return;
@@ -94,12 +97,12 @@ export async function revokeSession(req: Request, res: Response): Promise<void> 
 
 // DELETE /api/admin/users/:userId/sessions → revocar todas las sesiones de un usuario
 export async function revokeUserSessions(req: Request, res: Response): Promise<void> {
-  const { userId } = req.params;
-  const filter: Filter<Document> = { userId: { $in: idVariants(userId) } };
+  const userId = param(req.params.userId);
+  const filter: Record<string, unknown> = { userId: { $in: idVariants(userId) } };
   // Si el admin se cierra a sí mismo, se conserva la sesión actual
   if (String(req.user?.id) === userId && req.session?.id) {
     filter._id = { $nin: idVariants(String(req.session.id)) };
   }
-  const result = await sessions().deleteMany(filter);
+  const result = await sessions().deleteMany(filter as Filter<Document>);
   res.json({ revoked: result.deletedCount });
 }

@@ -20,6 +20,12 @@ export const env = {
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ?? "",
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ?? "",
   GOOGLE_API_KEY: process.env.GOOGLE_API_KEY ?? "",
+  STORAGE_ENDPOINT: process.env.STORAGE_ENDPOINT ?? "",
+  STORAGE_REGION: process.env.STORAGE_REGION ?? "auto",
+  STORAGE_BUCKET: process.env.STORAGE_BUCKET ?? "",
+  STORAGE_ACCESS_KEY_ID: process.env.STORAGE_ACCESS_KEY_ID ?? "",
+  STORAGE_SECRET_ACCESS_KEY: process.env.STORAGE_SECRET_ACCESS_KEY ?? "",
+  STORAGE_PUBLIC_URL: (process.env.STORAGE_PUBLIC_URL ?? "").replace(/\/+$/, ""),
   GEMINI_MODEL: process.env.GEMINI_MODEL ?? "gemini-3.5-flash-lite",
 };
 

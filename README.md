@@ -35,7 +35,7 @@ Todo usuario nuevo (por email, GitHub o Google) se registra con rol **`user`**.
 | Chatear con el asistente de IA | ❌ (→ login) | ✅ | ✅ |
 | Crear, modificar y eliminar | ❌ (401) | ❌ (403) | ✅ |
 | Panel admin `/admin` | ❌ (→ login) | ❌ ("Sin permisos") | ✅ |
-| Gestionar usuarios y roles | ❌ | ❌ | ✅ |
+| Gestionar usuarios, roles y sesiones activas | ❌ | ❌ | ✅ |
 
 El listado público y el detalle no requieren sesión. Toda escritura exige rol `admin`.
 
@@ -143,6 +143,9 @@ Base: `/api`
 | PATCH | `/api/vehicles/:id` | Actualizar campos o reactivar (`{ "active": true }`) | admin |
 | DELETE | `/api/vehicles/:id` | **Baja lógica** (200) | admin |
 | DELETE | `/api/vehicles/:id?hard=true` | **Baja física** (204) | admin |
+| GET | `/api/admin/sessions` | Sesiones activas con datos del usuario (`?userId=` para filtrar) | admin |
+| DELETE | `/api/admin/sessions/:id` | Revocar una sesión (204) | admin |
+| DELETE | `/api/admin/users/:userId/sessions` | Revocar todas las sesiones de un usuario | admin |
 | POST | `/api/agent/chat` | Conversar con el agente de IA (máx. 15 mensajes cada 5 min) | user / admin (logueado) |
 | * | `/api/auth/*` | Endpoints de Better Auth (sign-up, sign-in, OAuth, sesión, admin) | Según endpoint |
 
@@ -312,7 +315,7 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 **Opcionales implementados**
 - ✅ Paginación, búsqueda y filtros (sincronizados con la URL, así se pueden compartir)
 - ✅ Login con Google, con la app publicada (cualquier cuenta de Google puede entrar)
-- ✅ Gestión de usuarios para el admin (`/admin/users`): crearlos (`authClient.admin.createUser`) y cambiarles el rol (`authClient.admin.setRole`)
+- ✅ Panel de usuarios, roles y sesiones: listar y crear usuarios (`authClient.admin.listUsers` / `createUser`), cambiar roles (`authClient.admin.setRole`) y **consultar y revocar sesiones activas** (`/admin/sessions`), una por una o todas las de un usuario
 
 **Extras**
 - 🤖 Agente de IA con LangChain (Volti), con herramientas sobre la base, traza visible de herramientas y rate limit

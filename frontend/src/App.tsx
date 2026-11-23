@@ -15,6 +15,7 @@ import { VehiclesPage } from "./pages/VehiclesPage";
 import { VehicleDetailPage } from "./pages/VehicleDetailPage";
 import { AdminVehiclesPage } from "./pages/admin/AdminVehiclesPage";
 import { VehicleEditorPage } from "./pages/admin/VehicleEditorPage";
+import { AdminSessionsPage } from "./pages/admin/AdminSessionsPage";
 import { AssistantPage } from "./pages/AssistantPage";
 import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 
@@ -61,6 +62,7 @@ export default function App() {
           <Route path="vehicles/new" element={<VehicleEditorPage />} />
           <Route path="vehicles/:id/edit" element={<VehicleEditorPage />} />
           <Route path="users" element={<AdminUsersPage />} />
+          <Route path="sessions" element={<AdminSessionsPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

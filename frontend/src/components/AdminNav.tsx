@@ -9,6 +9,7 @@ export function AdminNav() {
       </NavLink>
       <NavLink to="/admin/vehicles">🚗 Vehículos</NavLink>
       <NavLink to="/admin/users">👥 Usuarios y roles</NavLink>
+      <NavLink to="/admin/sessions">🔐 Sesiones</NavLink>
     </nav>
   );
 }

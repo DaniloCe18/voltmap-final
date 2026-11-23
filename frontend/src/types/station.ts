@@ -23,6 +23,9 @@ export interface Station {
   available: boolean;
   fastCharge: boolean;
   installedAt: string;
+  /** false = dada de baja (baja lógica): no se ve en la vista pública */
+  active?: boolean;
+  deletedAt?: string | null;
   createdBy: string;
   createdByName?: string;
   createdAt: string;

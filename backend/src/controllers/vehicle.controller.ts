@@ -3,6 +3,7 @@ import { isValidObjectId, type FilterQuery, type SortOrder } from "mongoose";
 import { VehicleModel, type Vehicle } from "../models/vehicle.model.js";
 import { vehicleListQuerySchema } from "../schemas/vehicle.schema.js";
 import { deleteQuerySchema } from "../schemas/station.schema.js";
+import { deleteImageByUrl } from "../lib/storage.js";
 
 const NOT_FOUND = { error: "Vehículo no encontrado" };
 
@@ -113,10 +114,19 @@ export async function updateVehicle(req: Request, res: Response): Promise<void> 
   if (changes.active === true) changes.deletedAt = null;
   if (changes.active === false) changes.deletedAt = new Date();
 
+  const previous = await VehicleModel.findById(id).select("imageUrl");
+  if (!previous) {
+    res.status(404).json(NOT_FOUND);
+    return;
+  }
   const vehicle = await VehicleModel.findByIdAndUpdate(id, changes, { new: true, runValidators: true });
   if (!vehicle) {
     res.status(404).json(NOT_FOUND);
     return;
+  }
+  // Si se reemplazó o quitó la foto, se borra la anterior del almacenamiento
+  if ("imageUrl" in changes && previous.imageUrl && previous.imageUrl !== vehicle.imageUrl) {
+    await deleteImageByUrl(previous.imageUrl);
   }
   res.json(vehicle);
 }
@@ -141,6 +151,8 @@ export async function deleteVehicle(req: Request, res: Response): Promise<void> 
       res.status(404).json(NOT_FOUND);
       return;
     }
+    // Baja física: también se borra la foto del almacenamiento externo
+    await deleteImageByUrl(deleted.imageUrl);
     res.status(204).send();
     return;
   }

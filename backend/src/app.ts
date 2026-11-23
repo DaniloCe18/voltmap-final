@@ -6,6 +6,7 @@ import { auth } from "./lib/auth.js";
 import { env, isProduction } from "./lib/env.js";
 import stationRoutes from "./routes/station.routes.js";
 import vehicleRoutes from "./routes/vehicle.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 import agentRoutes from "./routes/agent.routes.js";
 import { isAgentConfigured } from "./agent/agent.js";
 import { errorHandler, notFound } from "./middlewares/error.js";
@@ -34,6 +35,7 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/api/stations", stationRoutes);
 app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/agent", agentRoutes);
 
 app.use(notFound);

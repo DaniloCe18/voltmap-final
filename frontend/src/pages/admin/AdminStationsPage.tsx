@@ -5,7 +5,6 @@ import { StationsManager } from "../../components/StationsManager";
 export function AdminStationsPage() {
   return (
     <StationsManager
-      source="all"
       eyebrow="// panel de administración"
       title="Todas las estaciones"
       emptyText="No hay estaciones cargadas."

@@ -25,7 +25,6 @@ export function Navbar() {
           <NavLink to="/" end>
             Estaciones
           </NavLink>
-          {session && <NavLink to="/my-stations">Mis estaciones</NavLink>}
           <NavLink to="/assistant">🤖 Asistente IA</NavLink>
           {isAdmin && <NavLink to="/admin">Panel admin</NavLink>}
         </nav>

@@ -2,7 +2,7 @@
 
 **VoltMap** es un directorio colaborativo de **estaciones de carga para vehículos eléctricos** en Argentina. Cualquier persona puede buscar dónde cargar y filtrar por ciudad, tipo de conector, potencia, disponibilidad y si la estación usa **energía 100 % renovable**. Para cada estación, la app calcula el **tiempo y el costo estimados** de una carga del 10 al 80 %.
 
-Cualquier usuario registrado puede **aportar estaciones** a la red. Cada estación queda a su nombre y solo esa persona puede editarla o eliminarla. Los administradores moderan **todo** el catálogo y gestionan los usuarios.
+Los visitantes y usuarios consultan el catálogo; los **administradores** lo mantienen (alta, modificación y baja) y gestionan a los usuarios.
 
 Además incluye **Volti**, un **agente de IA hecho con LangChain** (ver [más abajo](#-agente-de-ia-volti-langchain--gemini)). Le preguntás en lenguaje natural, por ejemplo *"¿dónde cargo rápido en Córdoba con CCS2?"*, y el agente decide solo qué herramientas usar para consultar la base y responderte.
 
@@ -25,22 +25,19 @@ Además incluye **Volti**, un **agente de IA hecho con LangChain** (ver [más ab
 | admin | `admin@voltmap.dev` | `Admin1234!` |
 | user | `user@voltmap.dev` | `User1234!` |
 
-Todo usuario nuevo (por email, GitHub o Google) se registra con rol **`user`**. El usuario común ya tiene 3 estaciones propias cargadas por el seed, para probar "Mis estaciones".
+Todo usuario nuevo (por email, GitHub o Google) se registra con rol **`user`**.
 
-## 🔐 Roles y permisos (opcional "registros propios")
+## 🔐 Roles y permisos
 
 | Acción | Visitante (sin sesión) | `user` | `admin` |
 |---|:-:|:-:|:-:|
-| Ver listado general y detalle | ✅ | ✅ | ✅ |
-| Ver "Mis estaciones" | ❌ | ✅ (solo las suyas) | ✅ |
-| Crear estación (queda a su nombre) | ❌ | ✅ | ✅ |
-| Editar / eliminar **sus** estaciones | ❌ | ✅ | ✅ |
-| Editar / eliminar estaciones **de otros** | ❌ | ❌ (403) | ✅ |
-| Panel admin `/admin` (ABM de todas) | ❌ | ❌ ("Sin permisos") | ✅ |
-| Crear usuarios y cambiarles el rol | ❌ | ❌ | ✅ |
-| Chatear con el asistente de IA | ❌ | ✅ | ✅ |
+| Ver listado y detalle (vista pública) | ✅ | ✅ | ✅ |
+| Chatear con el asistente de IA | ❌ (→ login) | ✅ | ✅ |
+| Crear, modificar y eliminar | ❌ (401) | ❌ (403) | ✅ |
+| Panel admin `/admin` | ❌ (→ login) | ❌ ("Sin permisos") | ✅ |
+| Gestionar usuarios y roles | ❌ | ❌ | ✅ |
 
-El **listado general es público** y muestra las estaciones de todos. Cada usuario tiene además su vista **"Mis estaciones"** (`/my-stations`), donde administra solo las suyas.
+El listado público y el detalle no requieren sesión. Toda escritura exige rol `admin`.
 
 ---
 
@@ -59,8 +56,8 @@ El **listado general es público** y muestra las estaciones de todos. Cada usuar
 | `open24h` | booleano | abierta las 24 h |
 | `available` | booleano | operativa o fuera de servicio |
 | `installedAt` | fecha | no puede ser futura |
-| `createdBy` | texto | id del usuario dueño (automático, no editable) |
-| `createdByName` | texto | nombre del dueño (automático) |
+| `createdBy` | texto | id del admin que la cargó (automático, no editable) |
+| `createdByName` | texto | nombre de quien la cargó (automático) |
 | `fastCharge` | booleano (virtual) | `powerKw >= 50`, calculado y no guardado |
 
 Tipos usados: **texto, número, booleano, fecha y enum**.
@@ -76,12 +73,11 @@ Base: `/api`
 | GET | `/api/health` | Estado del servidor | Público |
 | GET | `/api/stations` | Listado paginado con búsqueda y filtros | Público |
 | GET | `/api/stations/cities` | Ciudades con estaciones (para filtros) | Público |
-| GET | `/api/stations/mine` | Estaciones del usuario logueado (mismos filtros) | user / admin (logueado) |
 | GET | `/api/stations/:id` | Detalle de una estación | Público |
-| POST | `/api/stations` | Crear estación (queda a nombre del usuario) | user / admin |
-| PUT | `/api/stations/:id` | Reemplazar estación (todos los campos) | **dueño** o admin |
-| PATCH | `/api/stations/:id` | Actualizar campos sueltos | **dueño** o admin |
-| DELETE | `/api/stations/:id` | Eliminar estación | **dueño** o admin |
+| POST | `/api/stations` | Crear estación | admin |
+| PUT | `/api/stations/:id` | Reemplazar estación (todos los campos) | admin |
+| PATCH | `/api/stations/:id` | Actualizar campos sueltos | admin |
+| DELETE | `/api/stations/:id` | Eliminar estación | admin |
 | POST | `/api/agent/chat` | Conversar con el agente de IA (máx. 15 mensajes cada 5 min) | user / admin (logueado) |
 | * | `/api/auth/*` | Endpoints de Better Auth (sign-up, sign-in, OAuth, sesión, admin) | Según endpoint |
 
@@ -101,16 +97,12 @@ Respuesta:
 | 204 | Estación eliminada |
 | 400 | Error de validación (Zod). Devuelve `{ error, details: [{ field, message }] }` |
 | 401 | Ruta de escritura sin sesión |
-| 403 | Con sesión, pero intenta modificar una estación de otro usuario sin ser admin |
+| 403 | Con sesión pero sin rol `admin` (por ejemplo, un `user` que intenta escribir) |
 | 404 | La estación no existe (o el id es inválido) |
 | 429 | Se superó el límite de mensajes al agente |
 | 502 / 503 | El modelo de IA no respondió / falta configurar `GOOGLE_API_KEY` |
 
-Protección de las rutas de escritura ([`backend/src/routes/station.routes.ts`](backend/src/routes/station.routes.ts)):
-- **Crear:** `authMiddleware` + `requireRole("user", "admin")`
-- **Editar / eliminar:** `authMiddleware` + `requireOwnerOrAdmin` ([`middlewares/ownership.ts`](backend/src/middlewares/ownership.ts)). Este middleware busca la estación (404 si no existe) y deja pasar solo al dueño o a un admin (403 si no).
-
-> Con el opcional de registros propios, los mínimos cambian así: `user` deja de ser solo lectura y puede escribir sus propios registros, mientras que `admin` sigue pudiendo crear, editar y eliminar **todo**.
+Las rutas de escritura están protegidas con `authMiddleware` (401 sin sesión) + `requireRole("admin")` (403 sin permisos): ver [`backend/src/routes/station.routes.ts`](backend/src/routes/station.routes.ts).
 
 En [`backend/requests.http`](backend/requests.http) hay ejemplos listos para probar con la extensión REST Client.
 
@@ -244,7 +236,7 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 **Obligatorias**
 - CRUD completo de estaciones, con validación Zod y errores 400 detallados
 - Better Auth con email/contraseña y GitHub, usuarios y sesiones guardados en Mongo
-- Roles `user` (por defecto) y `admin`, con permisos por dueño del registro (ver tabla de roles)
+- Roles `user` (por defecto, solo lectura) y `admin` (alta, modificación y baja)
 - Listado y detalle; login, registro y logout
 - Panel admin `/admin` protegido por rol (un usuario común ve "Sin permisos")
 - Formularios con React Hook Form + Zod; los errores del backend también se muestran en cada campo
@@ -252,7 +244,6 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 
 **Opcionales implementados**
 - ✅ Paginación, búsqueda y filtros (sincronizados con la URL, así se pueden compartir)
-- ✅ Que cada usuario vea y edite solo sus propios registros ("Mis estaciones"; los admins pueden con todos)
 - ✅ Login con Google, con la app publicada (cualquier cuenta de Google puede entrar)
 - ✅ Gestión de usuarios para el admin (`/admin/users`): crearlos (`authClient.admin.createUser`) y cambiarles el rol (`authClient.admin.setRole`)
 
@@ -274,7 +265,7 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 │   │   ├── agent/          # agente LangChain: tools, agente y controlador del chat
 │   │   ├── controllers/station.controller.ts
 │   │   ├── lib/            # auth (Better Auth), db, env
-│   │   ├── middlewares/    # authMiddleware, requireRole, ownership (dueño o admin), validateBody, rate-limit, errores
+│   │   ├── middlewares/    # authMiddleware, requireRole, validateBody, rate-limit, errores
 │   │   ├── models/station.model.ts
 │   │   ├── routes/         # station.routes.ts, agent.routes.ts
 │   │   ├── schemas/station.schema.ts   # Zod
@@ -287,7 +278,7 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 │   └── src/
 │       ├── components/     # Navbar, RequireAdmin, StationForm, StationCard…
 │       ├── lib/            # auth-client, api, format
-│       ├── pages/          # Home, Detail, MyStations, Editor, Assistant, Login, Register, Privacy, admin/*
+│       ├── pages/          # Home, Detail, Assistant, Login, Register, Privacy, admin/* (panel, editor, usuarios)
 │       └── schemas/        # Zod de formularios
 ├── render.yaml
 └── README.md

@@ -50,21 +50,17 @@ async function main() {
   await connectDB();
 
   const adminId = await ensureUser(adminEmail, adminPassword, "Admin VoltMap", "admin");
-  const userId = await ensureUser(userEmail, userPassword, "Usuario VoltMap", "user");
+  await ensureUser(userEmail, userPassword, "Usuario VoltMap", "user");
 
   const count = await StationModel.countDocuments();
   if (count === 0) {
     await StationModel.insertMany(
-      // Las últimas 3 quedan a nombre del usuario común, para probar "Mis estaciones"
-      sampleStations.map((s, i) => {
-        const ownedByUser = i >= sampleStations.length - 3;
-        return {
-          ...s,
-          installedAt: new Date(s.installedAt),
-          createdBy: ownedByUser ? userId : adminId,
-          createdByName: ownedByUser ? "Usuario VoltMap" : "Admin VoltMap",
-        };
-      }),
+      sampleStations.map((s) => ({
+        ...s,
+        installedAt: new Date(s.installedAt),
+        createdBy: adminId,
+        createdByName: "Admin VoltMap",
+      })),
     );
     console.log(`🔌 ${sampleStations.length} estaciones de ejemplo cargadas`);
   } else {

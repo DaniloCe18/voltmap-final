@@ -1,6 +1,7 @@
 import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import { useSession } from "../lib/auth-client";
 import { Spinner } from "./Spinner";
+import { AdminNav } from "./AdminNav";
 
 /** Ruta protegida por rol: sin sesión → /login, sin rol admin → "sin permisos". */
 export function RequireAdmin() {
@@ -29,5 +30,10 @@ export function RequireAdmin() {
     );
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <AdminNav />
+      <Outlet />
+    </>
+  );
 }

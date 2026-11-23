@@ -90,7 +90,7 @@ Tipos usados: **texto, número, booleano, fecha y enum**.
 | `priceUsd` | número | ≥ 0 |
 | `availableInArgentina` | booleano | se vende en el país |
 | `releaseDate` | fecha | desde 1990 |
-| `imageUrl` | texto | URL de la foto (opcional) |
+| `imageUrl` | texto | URL pública de la foto en el almacenamiento externo (opcional) |
 | `active` / `deletedAt` | booleano / fecha | baja lógica |
 | `kmPerKwh` | número (virtual) | eficiencia: `rangeKm / batteryKwh`, calculada |
 
@@ -148,6 +148,7 @@ Para probar las rutas de admin desde Swagger: abrir la documentación desde la U
 | PATCH | `/api/vehicles/:id` | Actualizar campos o reactivar (`{ "active": true }`) | admin |
 | DELETE | `/api/vehicles/:id` | **Baja lógica** (200) | admin |
 | DELETE | `/api/vehicles/:id?hard=true` | **Baja física** (204) | admin |
+| POST | `/api/uploads/image` | Subir una foto (multipart, campo `image`, JPG/PNG/WebP ≤ 3 MB) al almacenamiento externo → `{ url }` (201) | admin |
 | GET | `/api/admin/sessions` | Sesiones activas con datos del usuario (`?userId=` para filtrar) | admin |
 | DELETE | `/api/admin/sessions/:id` | Revocar una sesión (204) | admin |
 | DELETE | `/api/admin/users/:userId/sessions` | Revocar todas las sesiones de un usuario | admin |
@@ -220,6 +221,11 @@ Vite proxea `/api` → `http://localhost:3000`, así que el navegador trabaja co
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` | | OAuth App de GitHub |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | | OAuth Client de Google |
 | `GOOGLE_API_KEY` | | API key de Gemini para el agente ([Google AI Studio](https://aistudio.google.com/apikey), gratis) |
+| `STORAGE_ENDPOINT` | `https://<proyecto>.supabase.co/storage/v1/s3` | Endpoint S3 del almacenamiento de imágenes |
+| `STORAGE_REGION` | `us-east-1` | Región del bucket (la que indique el proveedor) |
+| `STORAGE_BUCKET` | `voltmap` | Nombre del bucket (público) |
+| `STORAGE_ACCESS_KEY_ID` / `STORAGE_SECRET_ACCESS_KEY` | | Claves S3 del proveedor |
+| `STORAGE_PUBLIC_URL` | `https://<proyecto>.supabase.co/storage/v1/object/public/voltmap` | URL pública base de los archivos |
 | `GEMINI_MODEL` | `gemini-3.5-flash-lite` | Modelo que usa el agente |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | `admin@voltmap.dev` / `Admin1234!` | Usuario admin del seed |
 | `SEED_USER_EMAIL` / `SEED_USER_PASSWORD` | `user@voltmap.dev` / `User1234!` | Usuario común del seed |
@@ -278,6 +284,16 @@ Desde tu máquina, con `MONGODB_URI` apuntando a la base de producción: `cd bac
 
 ---
 
+## 🖼️ Imágenes en almacenamiento externo
+
+Las fotos de los vehículos **no se guardan en MongoDB ni en el servidor**: se suben a un bucket de almacenamiento de objetos compatible con **S3** (en el deploy, **Supabase Storage**; también funciona con Cloudflare R2 o AWS S3 cambiando solo las variables `STORAGE_*`). En la base solo queda la **URL pública** (`imageUrl`).
+
+1. El admin elige la foto en el formulario → `POST /api/uploads/image` (multipart).
+2. El backend valida el tamaño (≤ 3 MB) y el **tipo real** del archivo por sus primeros bytes (JPG, PNG o WebP), lo sube con `@aws-sdk/client-s3` y devuelve la URL.
+3. Al guardar el vehículo se guarda esa URL. Si la foto se reemplaza o el vehículo se elimina definitivamente (baja física), la imagen anterior se borra del bucket.
+
+Las imágenes de ejemplo son **ilustraciones originales** (`backend/seed-assets/vehicles/`). `npm run seed` (o `npm run seed:images`) las sube al bucket para los vehículos que no tienen foto.
+
 ## 🤖 Agente de IA: Volti (LangChain + Gemini)
 
 Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat`, que arma un agente con **LangChain** (`createAgent`), usa como modelo **Google Gemini** y le da 4 herramientas ([`backend/src/agent/tools.ts`](backend/src/agent/tools.ts)):
@@ -321,6 +337,7 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 - ✅ Paginación, búsqueda y filtros (sincronizados con la URL, así se pueden compartir)
 - ✅ Login con Google, con la app publicada (cualquier cuenta de Google puede entrar)
 - ✅ Panel de usuarios, roles y sesiones: listar y crear usuarios (`authClient.admin.listUsers` / `createUser`), cambiar roles (`authClient.admin.setRole`) y **consultar y revocar sesiones activas** (`/admin/sessions`), una por una o todas las de un usuario
+- ✅ **Imágenes en almacenamiento externo** (Supabase Storage vía API S3): subida desde el panel, validación de tipo y tamaño, y solo la URL en la base
 - ✅ Documentación de la API con **Swagger 2.0** en `/api/docs` (todos los endpoints, parámetros, cuerpos, respuestas y códigos de estado)
 
 **Extras**
@@ -341,12 +358,13 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 │   │   ├── agent/          # agente LangChain: tools, agente y controlador del chat
 │   │   ├── docs/           # swagger.ts (especificación Swagger 2.0)
 │   │   ├── controllers/    # station.controller.ts, vehicle.controller.ts
-│   │   ├── lib/            # auth (Better Auth), db, env
+│   │   ├── lib/            # auth (Better Auth), db, env, storage (S3)
 │   │   ├── middlewares/    # authMiddleware, requireRole, validateBody, rate-limit, errores
 │   │   ├── models/         # station.model.ts, vehicle.model.ts
 │   │   ├── routes/         # station.routes.ts, vehicle.routes.ts, agent.routes.ts
 │   │   ├── schemas/        # Zod: station.schema.ts, vehicle.schema.ts
-│   │   ├── scripts/        # seed.ts (datos de prueba), test-gemini.ts (diagnóstico de IA)
+│   │   ├── scripts/        # seed.ts, seed-images.ts, vehicle-images.ts, test-gemini.ts
+│   ├── seed-assets/        # ilustraciones de los vehículos de ejemplo
 │   │   ├── app.ts
 │   │   └── index.ts
 │   ├── .env.example
@@ -363,6 +381,6 @@ Página `/assistant` (requiere sesión). El backend expone `POST /api/agent/chat
 ```
 
 ## 🛠️ Stack
-**Backend:** Express 5 · TypeScript · Swagger 2.0 (swagger-ui-express) · MongoDB (Mongoose + driver nativo) · Better Auth (plugin admin) · Zod · LangChain + Google Gemini
+**Backend:** Express 5 · TypeScript · Swagger 2.0 (swagger-ui-express) · S3 / Supabase Storage (multer + @aws-sdk/client-s3) · MongoDB (Mongoose + driver nativo) · Better Auth (plugin admin) · Zod · LangChain + Google Gemini
 **Frontend:** React 19 · Vite · TypeScript · React Router 7 · Redux Toolkit + RTK Query · React Hook Form · Zod · Better Auth client
 **Deploy:** Render (Web Service + Static Site)
